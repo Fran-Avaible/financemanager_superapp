@@ -62,8 +62,8 @@
                         <div class="news-ticker">
                             <div class="news-ticker-content">
                                 <div class="news-item">🎉 Selamat datang di Finance Orbital!</div>
-                                <div class="news-item">✨ Navigation System: Circular Tab Palette</div>
-                                <div class="news-item">👆 Swipe kiri/kanan untuk buka palette</div>
+                                <div class="news-item">✨ Navigation System: Pizza Wheel</div>
+                                <div class="news-item">👆 Tap tombol bawah untuk buka menu</div>
                                 <div class="news-item">📞 Support: 082181238808 (WhatsApp)</div>
                             </div>
                         </div>
@@ -78,7 +78,7 @@
                         <h2 class="card-title">Selamat Datang di Finance Orbital!</h2>
                     </div>
                     <div class="card-body">
-                        <p>Pilih tab di atas untuk mulai menjelajahi fitur-fitur aplikasi.</p>
+                        <p>Tap tombol pizza di bawah untuk membuka menu navigasi.</p>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 2rem;">
                             <div style="text-align: center; padding: 1rem; background: var(--light-color); border-radius: 8px;">
                                 <div style="font-size: 2rem;">🏠</div>
@@ -114,46 +114,76 @@
             </div>
         </div>
 
-        <!-- Circular Tab Palette (Mobile) -->
-        <div class="circular-palette" id="circularPalette">
-            <div class="palette-circle">
-                <div class="palette-center">📱</div>
-                <button class="palette-item active" data-tab="dashboard">
-                    <span class="palette-emoji">🏠</span>
-                    <span class="palette-label">Dashboard</span>
-                </button>
-                <button class="palette-item" data-tab="transactions">
-                    <span class="palette-emoji">🔍</span>
-                    <span class="palette-label">Transaksi</span>
-                </button>
-                <button class="palette-item" data-tab="financial-planning">
-                    <span class="palette-emoji">📊</span>
-                    <span class="palette-label">Planning</span>
-                </button>
-                <button class="palette-item" data-tab="reports">
-                    <span class="palette-emoji">📈</span>
-                    <span class="palette-label">Laporan</span>
-                </button>
-                <button class="palette-item" data-tab="calendar">
-                    <span class="palette-emoji">🗓️</span>
-                    <span class="palette-label">Kalender</span>
-                </button>
-                <button class="palette-item" data-tab="gold">
-                    <span class="palette-emoji">🪙</span>
-                    <span class="palette-label">Emas</span>
-                </button>
-                <button class="palette-item" data-tab="settings-personalization">
-                    <span class="palette-emoji">⚙️</span>
-                    <span class="palette-label">Pengaturan</span>
+        <!-- Pizza Wheel Navigation (Mobile) -->
+        <div class="pizza-wheel-container">
+            <!-- Closed State - Only Arrow Button -->
+            <div class="pizza-closed" id="pizzaClosed">
+                <button class="pizza-toggle-btn" id="pizzaToggleBtn">
+                    <span class="pizza-arrow">⬆️</span>
                 </button>
             </div>
-        </div>
 
-        <!-- Swipe Indicator -->
-        <div class="swipe-indicator" id="swipeIndicator">
-            <div class="swipe-arrow left">←</div>
-            <div class="swipe-text">Swipe untuk membuka palette</div>
-            <div class="swipe-arrow right">→</div>
+            <!-- Opened State - Half Circle Pizza -->
+            <div class="pizza-wheel hidden" id="pizzaWheel">
+                <div class="pizza-backdrop" id="pizzaBackdrop"></div>
+                <div class="pizza-half-circle">
+                    <div class="pizza-center">
+                        <button class="pizza-close-btn" id="pizzaCloseBtn">
+                            <span>✕</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Pizza Slices -->
+                    <div class="pizza-slice" data-tab="dashboard" style="--slice-index: 0;">
+                        <div class="slice-content">
+                            <div class="slice-emoji">🏠</div>
+                            <div class="slice-label">Dashboard</div>
+                        </div>
+                    </div>
+                    
+                    <div class="pizza-slice" data-tab="transactions" style="--slice-index: 1;">
+                        <div class="slice-content">
+                            <div class="slice-emoji">🔍</div>
+                            <div class="slice-label">Transaksi</div>
+                        </div>
+                    </div>
+                    
+                    <div class="pizza-slice" data-tab="financial-planning" style="--slice-index: 2;">
+                        <div class="slice-content">
+                            <div class="slice-emoji">📊</div>
+                            <div class="slice-label">Planning</div>
+                        </div>
+                    </div>
+                    
+                    <div class="pizza-slice" data-tab="reports" style="--slice-index: 3;">
+                        <div class="slice-content">
+                            <div class="slice-emoji">📈</div>
+                            <div class="slice-label">Laporan</div>
+                        </div>
+                    </div>
+                    
+                    <div class="pizza-slice" data-tab="calendar" style="--slice-index: 4;">
+                        <div class="slice-content">
+                            <div class="slice-emoji">🗓️</div>
+                            <div class="slice-label">Kalender</div>
+                        </div>
+                    </div>
+                    
+                    <div class="pizza-slice" data-tab="gold" style="--slice-index: 5;">
+                        <div class="slice-content">
+                            <div class="slice-emoji">🪙</div>
+                            <div class="slice-label">Emas</div>
+                        </div>
+                    </div>
+                    
+                    <div class="pizza-slice" data-tab="settings-personalization" style="--slice-index: 6;">
+                        <div class="slice-content">
+                            <div class="slice-emoji">⚙️</div>
+                            <div class="slice-label">Pengaturan</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Quick Note Popup -->
