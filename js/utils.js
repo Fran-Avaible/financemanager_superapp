@@ -1,4 +1,5 @@
-// js/utils.js - Simplified Version
+
+// js/utils.js - Enhanced Version untuk mendukung modul-modul
 
 export const Utils = {
     formatCurrency: (amount) => {
@@ -14,6 +15,13 @@ export const Utils = {
             year: 'numeric',
             month: 'long',
             day: 'numeric'
+        });
+    },
+
+    formatDateShort: (dateString) => {
+        return new Date(dateString).toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'short'
         });
     },
 
@@ -43,7 +51,7 @@ export const Utils = {
         
         // Event listener untuk menutup saat klik di luar modal
         modal.addEventListener('click', (e) => {
-            if (e.target === modal) Utils.closeModal(id);
+            if (e.target === modal) this.closeModal(id);
         });
     },
 
@@ -59,6 +67,57 @@ export const Utils = {
         if (modal) {
             modal.classList.add('hidden');
         }
+    },
+
+    showToast: (message, type = 'info') => {
+        // Method ini sekarang ada di main app
+        if (window.app && window.app.showToast) {
+            window.app.showToast(message, type);
+        } else {
+            // Fallback jika app belum siap
+            console.log(`Toast [${type}]: ${message}`);
+        }
+    },
+
+    // Helper untuk form controls
+    createFormGroup: (label, inputId, inputType = 'text', value = '', options = {}) => {
+        const { placeholder = '', required = false, selectOptions = [] } = options;
+        
+        if (inputType === 'select') {
+            return `
+                <div class="form-group">
+                    <label for="${inputId}" class="form-label">${label}</label>
+                    <select id="${inputId}" class="form-control" ${required ? 'required' : ''}>
+                        ${selectOptions.map(opt => 
+                            `<option value="${opt.value}" ${opt.value === value ? 'selected' : ''}>${opt.label}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="form-group">
+                <label for="${inputId}" class="form-label">${label}</label>
+                <input type="${inputType}" id="${inputId}" class="form-control" 
+                       value="${value}" placeholder="${placeholder}" ${required ? 'required' : ''}>
+            </div>
+        `;
+    },
+
+    // Helper untuk empty states
+    createEmptyState: (emoji, message, buttonText = '', buttonAction = '') => {
+        return `
+            <div class="empty-state">
+                <div class="emoji">${emoji}</div>
+                <p>${message}</p>
+                ${buttonText ? `
+                    <button class="btn btn-primary" onclick="${buttonAction}" style="margin-top: 10px;">
+                        ${buttonText}
+                    </button>
+                ` : ''}
+            </div>
+        `;
     }
 };
 
