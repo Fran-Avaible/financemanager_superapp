@@ -1,5 +1,4 @@
-// js/main.js - Finance App with Pizza Wheel Navigation
-
+// js/main.js - Clean Finance App
 class FinanceApp {
     constructor() {
         this.currentTab = 'dashboard';
@@ -9,66 +8,64 @@ class FinanceApp {
     }
 
     init() {
-        this.setupApp();
+        console.log('🚀 Finance Orbital Started');
         this.setupEventListeners();
-        this.setupTabPalette();
         this.setupPizzaWheel();
         this.loadQuickNote();
-    }
-
-    setupApp() {
-        console.log('🚀 Finance Orbital Pizza Wheel Navigation Started');
+        this.renderTabContent('dashboard');
     }
 
     setupPizzaWheel() {
-        const pizzaToggleBtn = document.getElementById('pizzaToggleBtn');
-        const pizzaCloseBtn = document.getElementById('pizzaCloseBtn');
+        const pizzaToggle = document.getElementById('pizzaToggle');
+        const pizzaClose = document.getElementById('pizzaClose');
         const pizzaBackdrop = document.getElementById('pizzaBackdrop');
         const pizzaSlices = document.querySelectorAll('.pizza-slice');
 
         // Toggle pizza wheel
-        pizzaToggleBtn.addEventListener('click', () => {
-            this.togglePizzaWheel(true);
-        });
-
-        pizzaCloseBtn.addEventListener('click', () => {
-            this.togglePizzaWheel(false);
-        });
-
-        pizzaBackdrop.addEventListener('click', () => {
-            this.togglePizzaWheel(false);
-        });
+        pizzaToggle.addEventListener('click', () => this.togglePizzaWheel(true));
+        pizzaClose.addEventListener('click', () => this.togglePizzaWheel(false));
+        pizzaBackdrop.addEventListener('click', () => this.togglePizzaWheel(false));
 
         // Pizza slice clicks
         pizzaSlices.forEach(slice => {
             slice.addEventListener('click', (e) => {
-                e.stopPropagation();
                 const tabName = slice.dataset.tab;
-                
-                // Update active state
-                pizzaSlices.forEach(s => s.classList.remove('active'));
-                slice.classList.add('active');
-                
                 this.switchTab(tabName);
                 this.togglePizzaWheel(false);
             });
         });
 
-        // Close on escape key
+        // Desktop tab clicks
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const tabName = e.currentTarget.dataset.tab;
+                this.switchTab(tabName);
+            });
+        });
+
+        // Escape key to close pizza wheel
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.isPizzaOpen) {
                 this.togglePizzaWheel(false);
             }
         });
+    }
 
-        // Set initial active slice
-        this.updatePizzaActiveState();
+    setupEventListeners() {
+        // Quick actions
+        document.getElementById('quickNoteBtn').addEventListener('click', () => this.toggleQuickNote());
+        document.getElementById('addTransactionBtn').addEventListener('click', () => this.showAddTransactionModal());
+        document.getElementById('transferBtn').addEventListener('click', () => this.showTransferModal());
+        
+        // Quick note buttons
+        document.getElementById('saveQuickNoteBtn').addEventListener('click', () => this.saveQuickNote());
+        document.getElementById('clearQuickNoteBtn').addEventListener('click', () => this.clearQuickNote());
     }
 
     togglePizzaWheel(open) {
-        const pizzaClosed = document.getElementById('pizzaClosed');
+        const pizzaClosed = document.querySelector('.pizza-closed');
         const pizzaWheel = document.getElementById('pizzaWheel');
-        const pizzaToggleBtn = document.getElementById('pizzaToggleBtn');
+        const toggleIcon = document.querySelector('.toggle-icon');
 
         this.isPizzaOpen = open;
 
@@ -76,264 +73,120 @@ class FinanceApp {
             pizzaClosed.classList.add('hidden');
             pizzaWheel.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
-            
-            // Animate arrow
-            pizzaToggleBtn.querySelector('.pizza-arrow').style.transform = 'rotate(180deg)';
+            toggleIcon.style.transform = 'rotate(180deg)';
         } else {
             pizzaClosed.classList.remove('hidden');
             pizzaWheel.classList.add('hidden');
             document.body.style.overflow = '';
-            
-            // Reset arrow
-            pizzaToggleBtn.querySelector('.pizza-arrow').style.transform = 'rotate(0deg)';
+            toggleIcon.style.transform = 'rotate(0deg)';
         }
     }
 
-    updatePizzaActiveState() {
-        const pizzaSlices = document.querySelectorAll('.pizza-slice');
-        pizzaSlices.forEach(slice => {
-            slice.classList.toggle('active', slice.dataset.tab === this.currentTab);
-        });
-    }
-
-    setupTabPalette() {
-        const tabs = document.querySelectorAll('.tab-palette');
-        
-        tabs.forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                const tabName = e.currentTarget.dataset.tab;
-                this.switchTab(tabName);
-            });
-        });
-    }
-
-    setupEventListeners() {
-        // Quick actions
-        document.getElementById('quickNoteBtn')?.addEventListener('click', () => this.toggleQuickNotePopup());
-        document.getElementById('addTransactionBtn')?.addEventListener('click', () => this.showAddTransactionModal());
-        document.getElementById('transferBtn')?.addEventListener('click', () => this.showTransferModal());
-        
-        // Quick note buttons
-        document.getElementById('saveQuickNoteBtn')?.addEventListener('click', () => this.saveQuickNote());
-        document.getElementById('clearQuickNoteBtn')?.addEventListener('click', () => this.clearQuickNote());
-    }
-
-    async switchTab(tabName) {
+    switchTab(tabName) {
         this.currentTab = tabName;
         
-        // Update both regular and pizza active states
-        document.querySelectorAll('.tab-palette').forEach(tab => {
+        // Update active states
+        document.querySelectorAll('.nav-tab').forEach(tab => {
             tab.classList.toggle('active', tab.dataset.tab === tabName);
         });
         
-        this.updatePizzaActiveState();
-        await this.renderTabContent(tabName);
-    }
-
-    async renderTabContent(tabName) {
-        const tabContent = document.getElementById('tabContent');
-        if (!tabContent) return;
+        document.querySelectorAll('.pizza-slice').forEach(slice => {
+            slice.classList.toggle('active', slice.dataset.tab === tabName);
+        });
         
-        // Show loading
-        tabContent.innerHTML = `
-            <div class="card">
-                <div style="text-align: center; padding: 40px;">
-                    <div style="width: 40px; height: 40px; border: 4px solid var(--light-color); border-top: 4px solid var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
-                    <p style="margin-top: 15px; color: var(--muted-color);">Memuat ${tabName}...</p>
-                </div>
-            </div>
-        `;
-
-        try {
-            await new Promise(resolve => setTimeout(resolve, 300));
-            
-            let content = '';
-            switch(tabName) {
-                case 'dashboard': content = this.renderDashboard(); break;
-                case 'transactions': content = this.renderTransactions(); break;
-                case 'financial-planning': content = this.renderFinancialPlanning(); break;
-                case 'reports': content = this.renderReports(); break;
-                case 'calendar': content = this.renderCalendar(); break;
-                case 'gold': content = this.renderGold(); break;
-                case 'settings-personalization': content = this.renderSettings(); break;
-                default: content = this.renderDefault();
-            }
-            
-            tabContent.innerHTML = content;
-            
-        } catch (error) {
-            console.error(`Error rendering ${tabName}:`, error);
-            tabContent.innerHTML = this.renderError(tabName);
-        }
+        this.renderTabContent(tabName);
     }
 
-    renderDashboard() {
-        return `
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">🏠 Dashboard</h2>
-                </div>
-                <div class="card-body">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-                        <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 1.5rem; border-radius: 12px;">
-                            <h3 style="margin: 0 0 10px 0; font-size: 1rem;">Total Balance</h3>
-                            <div style="font-size: 1.8rem; font-weight: bold;">Rp 14.007.437,5</div>
-                        </div>
-                        <div style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white; padding: 1.5rem; border-radius: 12px;">
-                            <h3 style="margin: 0 0 10px 0; font-size: 1rem;">Monthly Income</h3>
-                            <div style="font-size: 1.8rem; font-weight: bold;">Rp 8.500.000</div>
-                        </div>
-                        <div style="background: linear-gradient(135deg, #4facfe, #00f2fe); color: white; padding: 1.5rem; border-radius: 12px;">
-                            <h3 style="margin: 0 0 10px 0; font-size: 1rem;">Monthly Expense</h3>
-                            <div style="font-size: 1.8rem; font-weight: bold;">Rp 5.200.000</div>
-                        </div>
-                    </div>
-                    
-                    <h3 style="margin-bottom: 1rem;">Recent Transactions</h3>
-                    <div style="background: var(--light-color); padding: 1rem; border-radius: 8px;">
-                        <p style="text-align: center; color: var(--muted-color);">No recent transactions</p>
-                    </div>
-                </div>
-            </div>
-        `;
+    renderTabContent(tabName) {
+        const tabContent = document.getElementById('tabContent');
+        const content = this.getTabContent(tabName);
+        tabContent.innerHTML = content;
     }
 
-    renderTransactions() {
-        return `
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">🔍 Transaksi</h2>
-                    <button class="btn btn-primary" onclick="window.app.showAddTransactionModal()">
-                        ➕ Tambah Transaksi
-                    </button>
+    getTabContent(tabName) {
+        const contents = {
+            dashboard: `
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">🏠 Dashboard</h2>
+                    </div>
+                    <div class="card-body">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                            <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 1.5rem; border-radius: 12px;">
+                                <h3 style="margin: 0 0 10px 0; font-size: 1rem;">Total Balance</h3>
+                                <div style="font-size: 1.8rem; font-weight: bold;">Rp 14.007.437,5</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white; padding: 1.5rem; border-radius: 12px;">
+                                <h3 style="margin: 0 0 10px 0; font-size: 1rem;">Monthly Income</h3>
+                                <div style="font-size: 1.8rem; font-weight: bold;">Rp 8.500.000</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #4facfe, #00f2fe); color: white; padding: 1.5rem; border-radius: 12px;">
+                                <h3 style="margin: 0 0 10px 0; font-size: 1rem;">Monthly Expense</h3>
+                                <div style="font-size: 1.8rem; font-weight: bold;">Rp 5.200.000</div>
+                            </div>
+                        </div>
+                        
+                        <h3 style="margin-bottom: 1rem;">Recent Transactions</h3>
+                        <div style="background: var(--light-color); padding: 1rem; border-radius: 8px;">
+                            <p style="text-align: center; color: var(--muted-color);">No recent transactions</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div style="text-align: center; padding: 3rem;">
-                        <div style="font-size: 4rem; margin-bottom: 1rem;">💸</div>
-                        <h3>Kelola Transaksi Keuangan</h3>
-                        <p style="color: var(--muted-color); margin-bottom: 2rem;">Tambahkan transaksi pemasukan dan pengeluaran</p>
-                        <button class="btn btn-primary btn-lg" onclick="window.app.showAddTransactionModal()">
-                            ➕ Tambah Transaksi Pertama
+            `,
+            
+            transactions: `
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">🔍 Transaksi</h2>
+                        <button class="btn btn-primary" onclick="window.app.showAddTransactionModal()">
+                            ➕ Tambah Transaksi
                         </button>
                     </div>
-                </div>
-            </div>
-        `;
-    }
-
-    renderFinancialPlanning() {
-        return `
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">📊 Financial Planning</h2>
-                </div>
-                <div class="card-body">
-                    <div style="text-align: center; padding: 3rem;">
-                        <div style="font-size: 4rem; margin-bottom: 1rem;">🎯</div>
-                        <h3>Rencana Keuangan Masa Depan</h3>
-                        <p style="color: var(--muted-color);">Atur budget, tabungan, dan investasi</p>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    renderReports() {
-        return `
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">📈 Laporan</h2>
-                </div>
-                <div class="card-body">
-                    <div style="text-align: center; padding: 3rem;">
-                        <div style="font-size: 4rem; margin-bottom: 1rem;">📊</div>
-                        <h3>Analisis & Laporan Keuangan</h3>
-                        <p style="color: var(--muted-color);">Lihat laporan dan analisis keuangan Anda</p>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    renderCalendar() {
-        return `
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">🗓️ Kalender</h2>
-                </div>
-                <div class="card-body">
-                    <div style="text-align: center; padding: 3rem;">
-                        <div style="font-size: 4rem; margin-bottom: 1rem;">📅</div>
-                        <h3>Kalender Keuangan</h3>
-                        <p style="color: var(--muted-color);">Jadwal transaksi dan reminder</p>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    renderGold() {
-        return `
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">🪙 Emas</h2>
-                </div>
-                <div class="card-body">
-                    <div style="text-align: center; padding: 3rem;">
-                        <div style="font-size: 4rem; margin-bottom: 1rem;">💰</div>
-                        <h3>Investasi Emas</h3>
-                        <p style="color: var(--muted-color);">Kelola portfolio emas Anda</p>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    renderSettings() {
-        return `
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">⚙️ Pengaturan</h2>
-                </div>
-                <div class="card-body">
-                    <div style="text-align: center; padding: 3rem;">
-                        <div style="font-size: 4rem; margin-bottom: 1rem;">🎨</div>
-                        <h3>Pengaturan & Personalisasi</h3>
-                        <p style="color: var(--muted-color); margin-bottom: 2rem;">Atur tema dan preferensi aplikasi</p>
-                        
-                        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                            <button class="btn btn-outline">🔄 Reset Data</button>
-                            <button class="btn btn-outline">💾 Backup</button>
-                            <button class="btn btn-outline">🎨 Tema</button>
+                    <div class="card-body">
+                        <div style="text-align: center; padding: 2rem;">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">💸</div>
+                            <h3>Kelola Transaksi Keuangan</h3>
+                            <p style="color: var(--muted-color); margin-bottom: 1.5rem;">Tambahkan transaksi pemasukan dan pengeluaran</p>
+                            <button class="btn btn-primary" onclick="window.app.showAddTransactionModal()">
+                                ➕ Tambah Transaksi Pertama
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
-        `;
-    }
-
-    renderDefault() {
-        return `
-            <div class="card">
-                <div style="text-align: center; padding: 40px;">
-                    <div style="font-size: 48px; margin-bottom: 15px;">🚧</div>
-                    <h3>Fitur dalam Pengembangan</h3>
-                    <p style="color: var(--muted-color);">Tab ini akan segera hadir!</p>
+            `,
+            
+            'financial-planning': `
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">📊 Financial Planning</h2>
+                    </div>
+                    <div class="card-body">
+                        <div style="text-align: center; padding: 2rem;">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">🎯</div>
+                            <h3>Rencana Keuangan Masa Depan</h3>
+                            <p style="color: var(--muted-color);">Atur budget, tabungan, dan investasi</p>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        `;
+            `,
+            
+            // Add other tab contents here...
+            reports: this.createPlaceholderContent('📈 Laporan', 'Analisis & Laporan Keuangan'),
+            calendar: this.createPlaceholderContent('🗓️ Kalender', 'Jadwal transaksi dan reminder'),
+            gold: this.createPlaceholderContent('🪙 Emas', 'Kelola portfolio emas Anda'),
+            settings: this.createPlaceholderContent('⚙️ Pengaturan', 'Atur tema dan preferensi aplikasi')
+        };
+
+        return contents[tabName] || this.createPlaceholderContent('🚧', 'Fitur dalam pengembangan');
     }
 
-    renderError(tabName) {
+    createPlaceholderContent(emoji, title) {
         return `
             <div class="card">
-                <div style="text-align: center; padding: 40px; color: var(--danger-color);">
-                    <div style="font-size: 48px; margin-bottom: 15px;">😵</div>
-                    <h3>Terjadi Kesalahan</h3>
-                    <p>Gagal memuat konten. Silakan refresh halaman.</p>
-                    <button class="btn btn-primary" onclick="window.app.switchTab('${tabName}')" style="margin-top: 15px;">
-                        🔄 Coba Lagi
-                    </button>
+                <div style="text-align: center; padding: 3rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">${emoji}</div>
+                    <h3>${title}</h3>
+                    <p style="color: var(--muted-color);">Fitur akan segera hadir!</p>
                 </div>
             </div>
         `;
@@ -342,17 +195,14 @@ class FinanceApp {
     // Quick Note Functions
     loadQuickNote() {
         const content = localStorage.getItem(this.QUICK_NOTE_KEY) || '';
-        const textarea = document.getElementById('quickNoteContent');
-        if (textarea) {
-            textarea.value = content;
-        }
+        document.getElementById('quickNoteContent').value = content;
     }
 
     saveQuickNote() {
         const content = document.getElementById('quickNoteContent').value;
         localStorage.setItem(this.QUICK_NOTE_KEY, content);
         this.showToast('📝 Catatan berhasil disimpan!', 'success');
-        this.toggleQuickNotePopup();
+        this.toggleQuickNote();
     }
 
     clearQuickNote() {
@@ -363,15 +213,13 @@ class FinanceApp {
         }
     }
 
-    toggleQuickNotePopup() {
+    toggleQuickNote() {
         const popup = document.getElementById('quickNotePopup');
-        if (popup) {
-            const isHidden = popup.classList.toggle('hidden');
-            
-            if (!isHidden) {
-                this.loadQuickNote();
-                document.getElementById('quickNoteContent').focus();
-            }
+        popup.classList.toggle('hidden');
+        
+        if (!popup.classList.contains('hidden')) {
+            this.loadQuickNote();
+            document.getElementById('quickNoteContent').focus();
         }
     }
 
@@ -386,10 +234,11 @@ class FinanceApp {
 
     // Utility Functions
     showToast(message, type = 'info') {
+        // Remove existing toasts
         document.querySelectorAll('.toast').forEach(toast => toast.remove());
         
         const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
+        toast.className = 'toast';
         toast.textContent = message;
         toast.style.cssText = `
             position: fixed;
@@ -418,11 +267,6 @@ class FinanceApp {
 // Add CSS for animations
 const style = document.createElement('style');
 style.textContent = `
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    
     @keyframes slideIn {
         from {
             opacity: 0;
