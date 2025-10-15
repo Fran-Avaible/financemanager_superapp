@@ -1,4 +1,4 @@
-// js/modules/transactions.js (Versi Final yang Diperbaiki)
+// js/modules/transactions.js (VERSI DIPERBAIKI)
 import { DB } from '../database.js';
 import { Utils } from '../utils.js';
 
@@ -13,6 +13,9 @@ export class TransactionsModule {
                 <div class="card-header">
                     <h3 class="card-title">🔍 Semua Transaksi</h3>
                     <div class="data-management">
+                        <button class="btn btn-primary" id="addTransactionBtn">
+                            <span>➕</span> Tambah Transaksi
+                        </button>
                         <button class="btn btn-warning" id="exportCsvBtn">
                             <span>📤</span> Export CSV
                         </button>
@@ -68,6 +71,9 @@ export class TransactionsModule {
         // Export & Backup listeners
         document.getElementById('exportCsvBtn')?.addEventListener('click', () => this.exportToCSV());
         document.getElementById('backupBtn')?.addEventListener('click', () => this.downloadBackup());
+        
+        // ADD TRANSACTION BUTTON - YANG INI YANG PENTING!
+        document.getElementById('addTransactionBtn')?.addEventListener('click', () => this.showAddTransactionModal());
 
         // Enter key support for date filters
         document.getElementById('filterDateFrom')?.addEventListener('keypress', (e) => {
@@ -78,6 +84,367 @@ export class TransactionsModule {
         });
     }
 
+    // 🆕 METHOD BARU: MODAL TAMBAH TRANSAKSI
+    async showAddTransactionModal() {
+        const [wallets, categories] = await Promise.all([
+            DB.getWallets(),
+            DB.getCategories()
+        ]);
+
+        const content = `
+            <form id="addTransactionForm">
+                <div class="form-group">
+                    <label>Tipe Transaksi</label>
+                    <select id="transactionType" class="form-control" required>
+                        <option value="">Pilih Tipe</option>
+                        <option value="income">💰 Pemasukan</option>
+                        <option value="expense">💸 Pengeluaran</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Jumlah</label>
+                    <input type="number" id="transactionAmount" class="form-control" 
+                           placeholder="Masukkan jumlah" required min="1">
+                </div>
+                
+                <div class="form-group">
+                    <label>Kategori</label>
+                    <select id="transactionCategory" class="form-control" required>
+                        <option value="">Pilih Kategori</option>
+                        ${categories.map(cat => 
+                            `<option value="${cat.id}" data-type="${cat.type}">${cat.emoji} ${cat.name}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Dompet</label>
+                    <select id="transactionWallet" class="form-control" required>
+                        <option value="">Pilih Dompet</option>
+                        ${wallets.map(wallet => 
+                            `<option value="${wallet.id}">${wallet.emoji} ${wallet.name}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Tanggal</label>
+                    <input type="date" id="transactionDate" class="form-control" 
+                           value="${new Date().toISOString().split('T')[0]}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Catatan (Opsional)</label>
+                    <textarea id="transactionNotes" class="form-control" 
+                              placeholder="Tambahkan catatan..." rows="3"></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">
+                        💾 Simpan Transaksi
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="Utils.closeModal('addTransactionModal')">
+                        Batal
+                    </button>
+                </div>
+            </form>
+        `;
+
+        Utils.createModal('addTransactionModal', '➕ Tambah Transaksi Baru', content);
+        Utils.openModal('addTransactionModal');
+        
+        this.setupTransactionForm();
+        this.setupCategoryFilter();
+    }
+
+    // 🆕 METHOD BARU: FILTER KATEGORI BERDASARKAN TIPE
+    setupCategoryFilter() {
+        const typeSelect = document.getElementById('transactionType');
+        const categorySelect = document.getElementById('transactionCategory');
+        
+        if (!typeSelect || !categorySelect) return;
+        
+        typeSelect.addEventListener('change', () => {
+            const selectedType = typeSelect.value;
+            const options = categorySelect.querySelectorAll('option');
+            
+            options.forEach(option => {
+                if (option.value === '') return; // Keep "Pilih Kategori"
+                
+                const optionType = option.dataset.type;
+                if (selectedType === optionType) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+            
+            // Reset selection
+            categorySelect.value = '';
+        });
+    }
+
+    // 🆕 METHOD BARU: SETUP FORM TRANSAKSI
+    setupTransactionForm() {
+        const form = document.getElementById('addTransactionForm');
+        if (!form) return;
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const transactionData = {
+                type: document.getElementById('transactionType').value,
+                amount: parseInt(document.getElementById('transactionAmount').value),
+                categoryId: document.getElementById('transactionCategory').value,
+                walletId: document.getElementById('transactionWallet').value,
+                date: document.getElementById('transactionDate').value,
+                notes: document.getElementById('transactionNotes').value,
+                id: DB.generateId(),
+                createdAt: new Date().toISOString()
+            };
+
+            // Validasi
+            if (!this.validateTransaction(transactionData)) return;
+
+            try {
+                // Simpan transaksi
+                const transactions = await DB.getTransactions();
+                transactions.push(transactionData);
+                await DB.saveTransactions(transactions);
+
+                // Update wallet balance
+                await this.updateWalletBalance(transactionData);
+
+                Utils.closeModal('addTransactionModal');
+                Utils.showToast('✅ Transaksi berhasil ditambahkan!', 'success');
+                
+                // Refresh tampilan transaksi
+                await this.renderAllTransactions();
+                
+            } catch (error) {
+                console.error('Error saving transaction:', error);
+                Utils.showToast('❌ Gagal menyimpan transaksi', 'error');
+            }
+        };
+    }
+
+    // 🆕 METHOD BARU: VALIDASI TRANSAKSI
+    validateTransaction(data) {
+        if (!data.type) {
+            Utils.showToast('Pilih tipe transaksi terlebih dahulu', 'error');
+            return false;
+        }
+        if (data.amount <= 0) {
+            Utils.showToast('Jumlah harus lebih dari 0', 'error');
+            return false;
+        }
+        if (!data.categoryId) {
+            Utils.showToast('Pilih kategori terlebih dahulu', 'error');
+            return false;
+        }
+        if (!data.walletId) {
+            Utils.showToast('Pilih dompet terlebih dahulu', 'error');
+            return false;
+        }
+        return true;
+    }
+
+    // 🆕 METHOD BARU: UPDATE SALDO DOMPET
+    async updateWalletBalance(transaction) {
+        const wallets = await DB.getWallets();
+        const wallet = wallets.find(w => w.id === transaction.walletId);
+        
+        if (wallet) {
+            if (transaction.type === 'income') {
+                wallet.balance += transaction.amount;
+            } else {
+                wallet.balance -= transaction.amount;
+            }
+            
+            await DB.saveWallets(wallets);
+        }
+    }
+
+    // 🆕 METHOD BARU: MODAL EDIT TRANSAKSI
+    async showEditTransactionModal(transactionId) {
+        const [transactions, wallets, categories] = await Promise.all([
+            DB.getTransactions(),
+            DB.getWallets(),
+            DB.getCategories()
+        ]);
+
+        const transaction = transactions.find(t => t.id === transactionId);
+        if (!transaction) {
+            Utils.showToast('Transaksi tidak ditemukan', 'error');
+            return;
+        }
+
+        const content = `
+            <form id="editTransactionForm">
+                <div class="form-group">
+                    <label>Tipe Transaksi</label>
+                    <select id="editTransactionType" class="form-control" required>
+                        <option value="income" ${transaction.type === 'income' ? 'selected' : ''}>💰 Pemasukan</option>
+                        <option value="expense" ${transaction.type === 'expense' ? 'selected' : ''}>💸 Pengeluaran</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Jumlah</label>
+                    <input type="number" id="editTransactionAmount" class="form-control" 
+                           value="${transaction.amount}" required min="1">
+                </div>
+                
+                <div class="form-group">
+                    <label>Kategori</label>
+                    <select id="editTransactionCategory" class="form-control" required>
+                        ${categories.map(cat => 
+                            `<option value="${cat.id}" data-type="${cat.type}" 
+                             ${transaction.categoryId === cat.id ? 'selected' : ''}>
+                                ${cat.emoji} ${cat.name}
+                            </option>`
+                        ).join('')}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Dompet</label>
+                    <select id="editTransactionWallet" class="form-control" required>
+                        ${wallets.map(wallet => 
+                            `<option value="${wallet.id}" 
+                             ${transaction.walletId === wallet.id ? 'selected' : ''}>
+                                ${wallet.emoji} ${wallet.name}
+                            </option>`
+                        ).join('')}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Tanggal</label>
+                    <input type="date" id="editTransactionDate" class="form-control" 
+                           value="${transaction.date}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Catatan</label>
+                    <textarea id="editTransactionNotes" class="form-control" 
+                              rows="3">${transaction.notes || ''}</textarea>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">
+                        💾 Update Transaksi
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="window.app.modules.transactions.deleteTransaction('${transaction.id}')">
+                        🗑️ Hapus
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="Utils.closeModal('editTransactionModal')">
+                        Batal
+                    </button>
+                </div>
+            </form>
+        `;
+
+        Utils.createModal('editTransactionModal', '✏️ Edit Transaksi', content);
+        Utils.openModal('editTransactionModal');
+        
+        this.setupEditTransactionForm(transaction);
+    }
+
+    // 🆕 METHOD BARU: SETUP FORM EDIT
+    setupEditTransactionForm(originalTransaction) {
+        const form = document.getElementById('editTransactionForm');
+        if (!form) return;
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const updatedData = {
+                ...originalTransaction,
+                type: document.getElementById('editTransactionType').value,
+                amount: parseInt(document.getElementById('editTransactionAmount').value),
+                categoryId: document.getElementById('editTransactionCategory').value,
+                walletId: document.getElementById('editTransactionWallet').value,
+                date: document.getElementById('editTransactionDate').value,
+                notes: document.getElementById('editTransactionNotes').value
+            };
+
+            if (!this.validateTransaction(updatedData)) return;
+
+            try {
+                // Update transaction
+                const transactions = await DB.getTransactions();
+                const index = transactions.findIndex(t => t.id === originalTransaction.id);
+                transactions[index] = updatedData;
+                await DB.saveTransactions(transactions);
+
+                // Update wallet balance if amount or type changed
+                if (originalTransaction.amount !== updatedData.amount || 
+                    originalTransaction.type !== updatedData.type ||
+                    originalTransaction.walletId !== updatedData.walletId) {
+                    await this.recalculateWalletBalances();
+                }
+
+                Utils.closeModal('editTransactionModal');
+                Utils.showToast('✅ Transaksi berhasil diupdate!', 'success');
+                await this.renderAllTransactions();
+                
+            } catch (error) {
+                console.error('Error updating transaction:', error);
+                Utils.showToast('❌ Gagal mengupdate transaksi', 'error');
+            }
+        };
+    }
+
+    // 🆕 METHOD BARU: HAPUS TRANSAKSI
+    async deleteTransaction(transactionId) {
+        if (!confirm('Yakin ingin menghapus transaksi ini?')) return;
+
+        try {
+            const transactions = await DB.getTransactions();
+            const updatedTransactions = transactions.filter(t => t.id !== transactionId);
+            await DB.saveTransactions(updatedTransactions);
+            
+            // Recalculate all wallet balances
+            await this.recalculateWalletBalances();
+            
+            Utils.closeModal('editTransactionModal');
+            Utils.showToast('✅ Transaksi berhasil dihapus!', 'success');
+            await this.renderAllTransactions();
+            
+        } catch (error) {
+            console.error('Error deleting transaction:', error);
+            Utils.showToast('❌ Gagal menghapus transaksi', 'error');
+        }
+    }
+
+    // 🆕 METHOD BARU: RECALCULATE SALDO
+    async recalculateWalletBalances() {
+        const [transactions, wallets] = await Promise.all([
+            DB.getTransactions(),
+            DB.getWallets()
+        ]);
+
+        // Reset all wallet balances to 0
+        wallets.forEach(wallet => wallet.balance = 0);
+
+        // Recalculate based on transactions
+        transactions.forEach(transaction => {
+            const wallet = wallets.find(w => w.id === transaction.walletId);
+            if (wallet) {
+                if (transaction.type === 'income') {
+                    wallet.balance += transaction.amount;
+                } else {
+                    wallet.balance -= transaction.amount;
+                }
+            }
+        });
+
+        await DB.saveWallets(wallets);
+    }
+
+    // 🎯 METHOD YANG SUDAH ADA (TETAP DIKEEP)
     async downloadBackup() {
         try {
             await DB.backupData();
@@ -179,7 +546,7 @@ export class TransactionsModule {
                     </button>
                 </div>
             `;
-            document.getElementById('addFirstTransactionBtn')?.addEventListener('click', () => this.app.showAddTransactionModal());
+            document.getElementById('addFirstTransactionBtn')?.addEventListener('click', () => this.showAddTransactionModal());
             return;
         }
 
@@ -236,11 +603,11 @@ export class TransactionsModule {
             }).join('')}
         `;
 
-        // Add click listeners to transaction items
+        // 🆕 UPDATE: Add click listeners untuk edit transaksi
         container.querySelectorAll('.transaction-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 const transactionId = e.currentTarget.getAttribute('data-transaction-id');
-                this.app.showEditTransactionModal(transactionId);
+                this.showEditTransactionModal(transactionId);
             });
         });
     }
