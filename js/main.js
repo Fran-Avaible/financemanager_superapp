@@ -1,12 +1,10 @@
-// js/main.js - Finance App with Circular Tab Palette
+// js/main.js - Finance App with Pizza Wheel Navigation
 
 class FinanceApp {
     constructor() {
         this.currentTab = 'dashboard';
         this.QUICK_NOTE_KEY = 'quickNoteContent';
-        this.isPaletteOpen = false;
-        this.touchStartX = 0;
-        this.touchStartY = 0;
+        this.isPizzaOpen = false;
         this.init();
     }
 
@@ -14,97 +12,88 @@ class FinanceApp {
         this.setupApp();
         this.setupEventListeners();
         this.setupTabPalette();
-        this.setupCircularPalette();
-        this.setupTouchGestures();
+        this.setupPizzaWheel();
         this.loadQuickNote();
     }
 
     setupApp() {
-        console.log('🚀 Finance Orbital Circular Tab Palette Started');
-        // Set initial active state for circular palette
-        this.updateActiveTab('dashboard');
+        console.log('🚀 Finance Orbital Pizza Wheel Navigation Started');
     }
 
-    setupCircularPalette() {
-        const paletteItems = document.querySelectorAll('.palette-item');
-        const circularPalette = document.getElementById('circularPalette');
-        const swipeIndicator = document.getElementById('swipeIndicator');
-        
-        // Palette item clicks
-        paletteItems.forEach(item => {
-            item.addEventListener('click', (e) => {
+    setupPizzaWheel() {
+        const pizzaToggleBtn = document.getElementById('pizzaToggleBtn');
+        const pizzaCloseBtn = document.getElementById('pizzaCloseBtn');
+        const pizzaBackdrop = document.getElementById('pizzaBackdrop');
+        const pizzaSlices = document.querySelectorAll('.pizza-slice');
+
+        // Toggle pizza wheel
+        pizzaToggleBtn.addEventListener('click', () => {
+            this.togglePizzaWheel(true);
+        });
+
+        pizzaCloseBtn.addEventListener('click', () => {
+            this.togglePizzaWheel(false);
+        });
+
+        pizzaBackdrop.addEventListener('click', () => {
+            this.togglePizzaWheel(false);
+        });
+
+        // Pizza slice clicks
+        pizzaSlices.forEach(slice => {
+            slice.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const tabName = e.currentTarget.dataset.tab;
+                const tabName = slice.dataset.tab;
+                
+                // Update active state
+                pizzaSlices.forEach(s => s.classList.remove('active'));
+                slice.classList.add('active');
                 
                 this.switchTab(tabName);
-                this.toggleCircularPalette(false);
+                this.togglePizzaWheel(false);
             });
         });
 
-        // Close palette when clicking outside
-        document.addEventListener('click', (e) => {
-            if (this.isPaletteOpen && !circularPalette.contains(e.target)) {
-                this.toggleCircularPalette(false);
+        // Close on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.isPizzaOpen) {
+                this.togglePizzaWheel(false);
             }
         });
 
-        // Hide swipe indicator after first interaction
-        document.addEventListener('click', () => {
-            if (!swipeIndicator.classList.contains('hidden')) {
-                swipeIndicator.classList.add('hidden');
-            }
-        }, { once: true });
+        // Set initial active slice
+        this.updatePizzaActiveState();
     }
 
-    setupTouchGestures() {
-        let touchStartX = 0;
-        let touchStartY = 0;
-        const swipeThreshold = 50;
-        const verticalThreshold = 30;
+    togglePizzaWheel(open) {
+        const pizzaClosed = document.getElementById('pizzaClosed');
+        const pizzaWheel = document.getElementById('pizzaWheel');
+        const pizzaToggleBtn = document.getElementById('pizzaToggleBtn');
 
-        document.addEventListener('touchstart', (e) => {
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-        });
+        this.isPizzaOpen = open;
 
-        document.addEventListener('touchend', (e) => {
-            if (!touchStartX) return;
-
-            const touchEndX = e.changedTouches[0].clientX;
-            const touchEndY = e.changedTouches[0].clientY;
+        if (open) {
+            pizzaClosed.classList.add('hidden');
+            pizzaWheel.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
             
-            const diffX = touchEndX - touchStartX;
-            const diffY = touchEndY - touchStartY;
-
-            // Only trigger if horizontal swipe is dominant
-            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffY) < verticalThreshold) {
-                if (Math.abs(diffX) > swipeThreshold) {
-                    // Swipe in any horizontal direction opens palette
-                    this.toggleCircularPalette(!this.isPaletteOpen);
-                }
-            }
-
-            touchStartX = 0;
-            touchStartY = 0;
-        });
+            // Animate arrow
+            pizzaToggleBtn.querySelector('.pizza-arrow').style.transform = 'rotate(180deg)';
+        } else {
+            pizzaClosed.classList.remove('hidden');
+            pizzaWheel.classList.add('hidden');
+            document.body.style.overflow = '';
+            
+            // Reset arrow
+            pizzaToggleBtn.querySelector('.pizza-arrow').style.transform = 'rotate(0deg)';
+        }
     }
 
-    toggleCircularPalette(open = null) {
-        const circularPalette = document.getElementById('circularPalette');
-        const swipeIndicator = document.getElementById('swipeIndicator');
-        
-        if (open === null) {
-            this.isPaletteOpen = !this.isPaletteOpen;
-        } else {
-            this.isPaletteOpen = open;
-        }
-
-        if (this.isPaletteOpen) {
-            circularPalette.classList.add('active');
-            swipeIndicator.classList.add('hidden');
-        } else {
-            circularPalette.classList.remove('active');
-        }
+    updatePizzaActiveState() {
+        const pizzaSlices = document.querySelectorAll('.pizza-slice');
+        pizzaSlices.forEach(slice => {
+            slice.classList.toggle('active', slice.dataset.tab === this.currentTab);
+        });
     }
 
     setupTabPalette() {
@@ -116,19 +105,6 @@ class FinanceApp {
                 this.switchTab(tabName);
             });
         });
-
-        // Animation for regular tabs (desktop)
-        setTimeout(() => {
-            tabs.forEach((tab, index) => {
-                tab.style.opacity = '0';
-                tab.style.transform = 'translateY(-10px)';
-                setTimeout(() => {
-                    tab.style.transition = 'all 0.3s ease';
-                    tab.style.opacity = '1';
-                    tab.style.transform = 'translateY(0)';
-                }, index * 50);
-            });
-        }, 100);
     }
 
     setupEventListeners() {
@@ -140,48 +116,17 @@ class FinanceApp {
         // Quick note buttons
         document.getElementById('saveQuickNoteBtn')?.addEventListener('click', () => this.saveQuickNote());
         document.getElementById('clearQuickNoteBtn')?.addEventListener('click', () => this.clearQuickNote());
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey || e.metaKey) {
-                switch(e.key) {
-                    case 'n':
-                        e.preventDefault();
-                        this.toggleQuickNotePopup();
-                        break;
-                    case '1':
-                        e.preventDefault();
-                        this.switchTab('dashboard');
-                        break;
-                    case '2':
-                        e.preventDefault();
-                        this.switchTab('transactions');
-                        break;
-                }
-            }
-            
-            // Escape key closes palette
-            if (e.key === 'Escape' && this.isPaletteOpen) {
-                this.toggleCircularPalette(false);
-            }
-        });
-    }
-
-    updateActiveTab(tabName) {
-        // Update regular tabs
-        document.querySelectorAll('.tab-palette').forEach(tab => {
-            tab.classList.toggle('active', tab.dataset.tab === tabName);
-        });
-        
-        // Update circular palette items
-        document.querySelectorAll('.palette-item').forEach(item => {
-            item.classList.toggle('active', item.dataset.tab === tabName);
-        });
     }
 
     async switchTab(tabName) {
         this.currentTab = tabName;
-        this.updateActiveTab(tabName);
+        
+        // Update both regular and pizza active states
+        document.querySelectorAll('.tab-palette').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.tab === tabName);
+        });
+        
+        this.updatePizzaActiveState();
         await this.renderTabContent(tabName);
     }
 
@@ -200,34 +145,18 @@ class FinanceApp {
         `;
 
         try {
-            // Simulate API call delay
             await new Promise(resolve => setTimeout(resolve, 300));
             
             let content = '';
             switch(tabName) {
-                case 'dashboard': 
-                    content = this.renderDashboard(); 
-                    break;
-                case 'transactions': 
-                    content = this.renderTransactions(); 
-                    break;
-                case 'financial-planning': 
-                    content = this.renderFinancialPlanning(); 
-                    break;
-                case 'reports': 
-                    content = this.renderReports(); 
-                    break;
-                case 'calendar': 
-                    content = this.renderCalendar(); 
-                    break;
-                case 'gold': 
-                    content = this.renderGold(); 
-                    break;
-                case 'settings-personalization': 
-                    content = this.renderSettings(); 
-                    break;
-                default:
-                    content = this.renderDefault();
+                case 'dashboard': content = this.renderDashboard(); break;
+                case 'transactions': content = this.renderTransactions(); break;
+                case 'financial-planning': content = this.renderFinancialPlanning(); break;
+                case 'reports': content = this.renderReports(); break;
+                case 'calendar': content = this.renderCalendar(); break;
+                case 'gold': content = this.renderGold(); break;
+                case 'settings-personalization': content = this.renderSettings(); break;
+                default: content = this.renderDefault();
             }
             
             tabContent.innerHTML = content;
@@ -457,7 +386,6 @@ class FinanceApp {
 
     // Utility Functions
     showToast(message, type = 'info') {
-        // Hapus toast lama
         document.querySelectorAll('.toast').forEach(toast => toast.remove());
         
         const toast = document.createElement('div');
@@ -487,7 +415,7 @@ class FinanceApp {
     }
 }
 
-// Add CSS for loading spinner
+// Add CSS for animations
 const style = document.createElement('style');
 style.textContent = `
     @keyframes spin {
