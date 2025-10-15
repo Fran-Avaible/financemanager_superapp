@@ -5,153 +5,203 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finance Orbital - Super App</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="icon" href="IMG_20251014_120212.png" type="image/png">
 </head>
-<body>
+<body class="tab-palette-mode">
     <div class="app-wrapper">
-        <!-- Desktop Navigation -->
-        <nav class="desktop-nav">
-            <button class="nav-tab active" data-tab="dashboard">
-                <span class="nav-emoji">🏠</span>
-                <span class="nav-label">Dashboard</span>
+        <!-- Compact Tab Palette Navigation (Desktop) -->
+        <nav class="tab-palette-nav" id="tabPaletteNav">
+            <button class="tab-palette active" data-tab="dashboard">
+                <span class="tab-emoji">🏠</span>
+                <span class="tab-label">Dashboard</span>
             </button>
-            <button class="nav-tab" data-tab="transactions">
-                <span class="nav-emoji">🔍</span>
-                <span class="nav-label">Transaksi</span>
+            <button class="tab-palette" data-tab="transactions">
+                <span class="tab-emoji">🔍</span>
+                <span class="tab-label">Transaksi</span>
             </button>
-            <button class="nav-tab" data-tab="financial-planning">
-                <span class="nav-emoji">📊</span>
-                <span class="nav-label">Planning</span>
+            <button class="tab-palette" data-tab="financial-planning">
+                <span class="tab-emoji">📊</span>
+                <span class="tab-label">Planning</span>
             </button>
-            <button class="nav-tab" data-tab="reports">
-                <span class="nav-emoji">📈</span>
-                <span class="nav-label">Laporan</span>
+            <button class="tab-palette" data-tab="reports">
+                <span class="tab-emoji">📈</span>
+                <span class="tab-label">Laporan</span>
             </button>
-            <button class="nav-tab" data-tab="calendar">
-                <span class="nav-emoji">🗓️</span>
-                <span class="nav-label">Kalender</span>
+            <button class="tab-palette" data-tab="calendar">
+                <span class="tab-emoji">🗓️</span>
+                <span class="tab-label">Kalender</span>
             </button>
-            <button class="nav-tab" data-tab="gold">
-                <span class="nav-emoji">🪙</span>
-                <span class="nav-label">Emas</span>
+            <button class="tab-palette" data-tab="gold">
+                <span class="tab-emoji">🪙</span>
+                <span class="tab-label">Emas</span>
             </button>
-            <button class="nav-tab" data-tab="settings">
-                <span class="nav-emoji">⚙️</span>
-                <span class="nav-label">Pengaturan</span>
+            <button class="tab-palette" data-tab="settings-personalization">
+                <span class="tab-emoji">⚙️</span>
+                <span class="tab-label">Pengaturan</span>
             </button>
         </nav>
 
-        <!-- Main Content -->
-        <div class="main-content">
+        <!-- Main App Container -->
+        <div class="main-container" id="mainContainer">
             <!-- Header -->
             <header class="app-header">
-                <div class="header-top">
-                    <h1 class="app-title">Finance Orbital</h1>
-                    <div class="header-info">
-                        <div class="user-greeting">Selamat slang, Afrand!</div>
-                        <div class="total-balance">Rp 14.007.437,5</div>
+                <div class="header-content">
+                    <div class="header-left">
+                        <h1 class="app-title">Finance Orbital</h1>
+                    </div>
+                    <div class="header-right">
+                        <div class="user-greeting" id="userGreeting">Selamat slang, Afrand!</div>
+                        <div class="total-balance" id="totalBalance">Rp 14.007.437,5</div>
                     </div>
                 </div>
                 
                 <!-- News Ticker -->
-                <div class="news-ticker">
-                    <div class="ticker-content">
-                        <span>🎉 Selamat datang di Finance Orbital!</span>
-                        <span>✨ Navigation System: Pizza Wheel</span>
-                        <span>👆 Tap tombol bawah untuk buka menu</span>
-                        <span>📞 Support: 082181238808</span>
+                <div class="news-ticker-wrapper">
+                    <div class="news-ticker-container" id="newsTickerContainer">
+                        <div class="news-ticker">
+                            <div class="news-ticker-content">
+                                <div class="news-item">🎉 Selamat datang di Finance Orbital!</div>
+                                <div class="news-item">✨ Navigation System: Pizza Wheel</div>
+                                <div class="news-item">👆 Tap tombol bawah untuk buka menu</div>
+                                <div class="news-item">📞 Support: 082181238808 (WhatsApp)</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
 
             <!-- Tab Content -->
             <main class="tab-content" id="tabContent">
-                <!-- Default content will be loaded here by JavaScript -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Selamat Datang di Finance Orbital!</h2>
+                    </div>
+                    <div class="card-body">
+                        <p>Tap tombol pizza di bawah untuk membuka menu navigasi.</p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 2rem;">
+                            <div style="text-align: center; padding: 1rem; background: var(--light-color); border-radius: 8px;">
+                                <div style="font-size: 2rem;">🏠</div>
+                                <h3>Dashboard</h3>
+                                <p style="font-size: 0.9rem; color: var(--muted-color);">Ringkasan keuangan Anda</p>
+                            </div>
+                            <div style="text-align: center; padding: 1rem; background: var(--light-color); border-radius: 8px;">
+                                <div style="font-size: 2rem;">🔍</div>
+                                <h3>Transaksi</h3>
+                                <p style="font-size: 0.9rem; color: var(--muted-color);">Kelola pemasukan & pengeluaran</p>
+                            </div>
+                            <div style="text-align: center; padding: 1rem; background: var(--light-color); border-radius: 8px;">
+                                <div style="font-size: 2rem;">📊</div>
+                                <h3>Planning</h3>
+                                <p style="font-size: 0.9rem; color: var(--muted-color);">Rencana keuangan masa depan</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </main>
 
             <!-- Quick Actions -->
-            <div class="quick-actions">
-                <button class="action-btn" id="quickNoteBtn" title="Quick Note">
+            <div class="quick-actions-bar">
+                <button class="quick-action" id="quickNoteBtn" title="Quick Note">
                     <span>📝</span>
                 </button>
-                <button class="action-btn" id="addTransactionBtn" title="Tambah Transaksi">
+                <button class="quick-action" id="addTransactionBtn" title="Tambah Transaksi">
                     <span>➕</span>
                 </button>
-                <button class="action-btn" id="transferBtn" title="Transfer">
+                <button class="quick-action" id="transferBtn" title="Transfer">
                     <span>🔄</span>
                 </button>
             </div>
         </div>
 
-        <!-- Mobile Pizza Wheel -->
-        <div class="mobile-nav">
-            <!-- Closed State -->
-            <div class="pizza-closed">
-                <button class="pizza-toggle" id="pizzaToggle">
-                    <span class="toggle-icon">⬆️</span>
+        <!-- Pizza Wheel Navigation (Mobile) -->
+        <div class="pizza-wheel-container">
+            <!-- Closed State - Only Arrow Button -->
+            <div class="pizza-closed" id="pizzaClosed">
+                <button class="pizza-toggle-btn" id="pizzaToggleBtn">
+                    <span class="pizza-arrow">⬆️</span>
                 </button>
             </div>
 
-            <!-- Opened State -->
+            <!-- Opened State - Half Circle Pizza -->
             <div class="pizza-wheel hidden" id="pizzaWheel">
                 <div class="pizza-backdrop" id="pizzaBackdrop"></div>
                 <div class="pizza-half-circle">
                     <div class="pizza-center">
-                        <button class="pizza-close" id="pizzaClose">✕</button>
+                        <button class="pizza-close-btn" id="pizzaCloseBtn">
+                            <span>✕</span>
+                        </button>
                     </div>
                     
                     <!-- Pizza Slices -->
-                    <div class="pizza-slice active" data-tab="dashboard">
-                        <div class="slice-emoji">🏠</div>
-                        <div class="slice-label">Dashboard</div>
+                    <div class="pizza-slice" data-tab="dashboard" style="--slice-index: 0;">
+                        <div class="slice-content">
+                            <div class="slice-emoji">🏠</div>
+                            <div class="slice-label">Dashboard</div>
+                        </div>
                     </div>
                     
-                    <div class="pizza-slice" data-tab="transactions">
-                        <div class="slice-emoji">🔍</div>
-                        <div class="slice-label">Transaksi</div>
+                    <div class="pizza-slice" data-tab="transactions" style="--slice-index: 1;">
+                        <div class="slice-content">
+                            <div class="slice-emoji">🔍</div>
+                            <div class="slice-label">Transaksi</div>
+                        </div>
                     </div>
                     
-                    <div class="pizza-slice" data-tab="financial-planning">
-                        <div class="slice-emoji">📊</div>
-                        <div class="slice-label">Planning</div>
+                    <div class="pizza-slice" data-tab="financial-planning" style="--slice-index: 2;">
+                        <div class="slice-content">
+                            <div class="slice-emoji">📊</div>
+                            <div class="slice-label">Planning</div>
+                        </div>
                     </div>
                     
-                    <div class="pizza-slice" data-tab="reports">
-                        <div class="slice-emoji">📈</div>
-                        <div class="slice-label">Laporan</div>
+                    <div class="pizza-slice" data-tab="reports" style="--slice-index: 3;">
+                        <div class="slice-content">
+                            <div class="slice-emoji">📈</div>
+                            <div class="slice-label">Laporan</div>
+                        </div>
                     </div>
                     
-                    <div class="pizza-slice" data-tab="calendar">
-                        <div class="slice-emoji">🗓️</div>
-                        <div class="slice-label">Kalender</div>
+                    <div class="pizza-slice" data-tab="calendar" style="--slice-index: 4;">
+                        <div class="slice-content">
+                            <div class="slice-emoji">🗓️</div>
+                            <div class="slice-label">Kalender</div>
+                        </div>
                     </div>
                     
-                    <div class="pizza-slice" data-tab="gold">
-                        <div class="slice-emoji">🪙</div>
-                        <div class="slice-label">Emas</div>
+                    <div class="pizza-slice" data-tab="gold" style="--slice-index: 5;">
+                        <div class="slice-content">
+                            <div class="slice-emoji">🪙</div>
+                            <div class="slice-label">Emas</div>
+                        </div>
                     </div>
                     
-                    <div class="pizza-slice" data-tab="settings">
-                        <div class="slice-emoji">⚙️</div>
-                        <div class="slice-label">Pengaturan</div>
+                    <div class="pizza-slice" data-tab="settings-personalization" style="--slice-index: 6;">
+                        <div class="slice-content">
+                            <div class="slice-emoji">⚙️</div>
+                            <div class="slice-label">Pengaturan</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Quick Note Popup -->
-        <div class="quick-note hidden" id="quickNotePopup">
-            <div class="note-header">
+        <div id="quickNotePopup" class="quick-note-popup hidden">
+            <div class="quick-note-header">
                 <h4>📝 Catatan Cepat</h4>
-                <div class="note-actions">
-                    <button class="btn btn-outline" id="clearQuickNoteBtn">Hapus</button>
-                    <button class="btn btn-primary" id="saveQuickNoteBtn">Simpan</button>
+                <div>
+                    <button class="btn btn-sm btn-outline" id="clearQuickNoteBtn">Hapus</button>
+                    <button class="btn btn-sm btn-primary" id="saveQuickNoteBtn">Simpan</button>
                 </div>
             </div>
             <textarea id="quickNoteContent" placeholder="Tulis catatan Anda di sini..."></textarea>
         </div>
+
+        <!-- Modal Container -->
+        <div id="modal-container"></div>
     </div>
 
-    <script src="js/main.js"></script>
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
