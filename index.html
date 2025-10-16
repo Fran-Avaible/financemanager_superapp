@@ -114,77 +114,79 @@
             </div>
         </div>
 
-        <!-- Pizza Wheel Navigation (Mobile) -->
-        <div class="pizza-wheel-container">
-            <!-- Closed State - Only Arrow Button -->
-            <div class="pizza-closed" id="pizzaClosed">
-                <button class="pizza-toggle-btn" id="pizzaToggleBtn">
-                    <span class="pizza-arrow">⬆️</span>
-                </button>
-            </div>
+<!-- Pizza Wheel Navigation (Mobile) -->
+<div class="pizza-wheel-container">
+    <!-- Closed State - Only Arrow Button -->
+    <div class="pizza-closed" id="pizzaClosed">
+        <button class="pizza-toggle-btn" id="pizzaToggleBtn">
+            <span class="pizza-arrow">⬆️</span>
+        </button>
+    </div>
 
-            <!-- Opened State - Half Circle Pizza -->
-            <div class="pizza-wheel hidden" id="pizzaWheel">
-                <div class="pizza-backdrop" id="pizzaBackdrop"></div>
-                <div class="pizza-half-circle">
-                    <div class="pizza-center">
-                        <button class="pizza-close-btn" id="pizzaCloseBtn">
-                            <span>✕</span>
-                        </button>
+    <!-- Opened State - Half Circle Pizza -->
+    <div class="pizza-wheel hidden" id="pizzaWheel">
+        <div class="pizza-backdrop" id="pizzaBackdrop"></div>
+        <div class="pizza-half-circle">
+            <div class="pizza-wheel-rotatable" id="pizzaWheelRotatable">
+                <!-- Pizza Slices -->
+                <div class="pizza-slice" data-tab="dashboard" style="--slice-index: 0;">
+                    <div class="slice-content">
+                        <div class="slice-emoji">🏠</div>
+                        <div class="slice-label">Dashboard</div>
                     </div>
-                    
-                    <!-- Pizza Slices -->
-                    <div class="pizza-slice" data-tab="dashboard" style="--slice-index: 0;">
-                        <div class="slice-content">
-                            <div class="slice-emoji">🏠</div>
-                            <div class="slice-label">Dashboard</div>
-                        </div>
+                </div>
+                
+                <div class="pizza-slice" data-tab="transactions" style="--slice-index: 1;">
+                    <div class="slice-content">
+                        <div class="slice-emoji">🔍</div>
+                        <div class="slice-label">Transaksi</div>
                     </div>
-                    
-                    <div class="pizza-slice" data-tab="transactions" style="--slice-index: 1;">
-                        <div class="slice-content">
-                            <div class="slice-emoji">🔍</div>
-                            <div class="slice-label">Transaksi</div>
-                        </div>
+                </div>
+                
+                <div class="pizza-slice" data-tab="financial-planning" style="--slice-index: 2;">
+                    <div class="slice-content">
+                        <div class="slice-emoji">📊</div>
+                        <div class="slice-label">Planning</div>
                     </div>
-                    
-                    <div class="pizza-slice" data-tab="financial-planning" style="--slice-index: 2;">
-                        <div class="slice-content">
-                            <div class="slice-emoji">📊</div>
-                            <div class="slice-label">Planning</div>
-                        </div>
+                </div>
+                
+                <div class="pizza-slice" data-tab="reports" style="--slice-index: 3;">
+                    <div class="slice-content">
+                        <div class="slice-emoji">📈</div>
+                        <div class="slice-label">Laporan</div>
                     </div>
-                    
-                    <div class="pizza-slice" data-tab="reports" style="--slice-index: 3;">
-                        <div class="slice-content">
-                            <div class="slice-emoji">📈</div>
-                            <div class="slice-label">Laporan</div>
-                        </div>
+                </div>
+                
+                <div class="pizza-slice" data-tab="calendar" style="--slice-index: 4;">
+                    <div class="slice-content">
+                        <div class="slice-emoji">🗓️</div>
+                        <div class="slice-label">Kalender</div>
                     </div>
-                    
-                    <div class="pizza-slice" data-tab="calendar" style="--slice-index: 4;">
-                        <div class="slice-content">
-                            <div class="slice-emoji">🗓️</div>
-                            <div class="slice-label">Kalender</div>
-                        </div>
+                </div>
+                
+                <div class="pizza-slice" data-tab="gold" style="--slice-index: 5;">
+                    <div class="slice-content">
+                        <div class="slice-emoji">🪙</div>
+                        <div class="slice-label">Emas</div>
                     </div>
-                    
-                    <div class="pizza-slice" data-tab="gold" style="--slice-index: 5;">
-                        <div class="slice-content">
-                            <div class="slice-emoji">🪙</div>
-                            <div class="slice-label">Emas</div>
-                        </div>
-                    </div>
-                    
-                    <div class="pizza-slice" data-tab="settings-personalization" style="--slice-index: 6;">
-                        <div class="slice-content">
-                            <div class="slice-emoji">⚙️</div>
-                            <div class="slice-label">Pengaturan</div>
-                        </div>
+                </div>
+                
+                <div class="pizza-slice" data-tab="settings-personalization" style="--slice-index: 6;">
+                    <div class="slice-content">
+                        <div class="slice-emoji">⚙️</div>
+                        <div class="slice-label">Pengaturan</div>
                     </div>
                 </div>
             </div>
+            
+            <div class="pizza-center">
+                <button class="pizza-close-btn" id="pizzaCloseBtn">
+                    <span>✕</span>
+                </button>
+            </div>
         </div>
+    </div>
+</div>
 
         <!-- Quick Note Popup -->
         <div id="quickNotePopup" class="quick-note-popup hidden">
@@ -205,3 +207,4 @@
     <script type="module" src="js/main.js"></script>
 </body>
 </html>
+
