@@ -1,5 +1,4 @@
-
-// js/main.js - Finance App with Pizza Wheel Navigation (FULLY FIXED)
+// js/main.js - Finance App with Rotatable Pizza Wheel Navigation (FINAL VERSION)
 
 class FinanceApp {
     constructor() {
@@ -40,10 +39,12 @@ class FinanceApp {
         }
     }
 
-    initializeModules() {
+    async initializeModules() {
         try {
-            // Inisialisasi modul-modul dengan dynamic import
-            // Modules akan di-load on-demand saat tab diakses
+            // Load transaction modal module
+            const transactionModalModule = await import('./modules/transaction-modal.js');
+            this.transactionModal = new transactionModalModule.TransactionModal(this);
+            
             this.modules = {
                 dashboard: null,
                 transactions: null,
@@ -51,7 +52,6 @@ class FinanceApp {
                 'settings-personalization': null
             };
             
-            console.log('✅ Modules system initialized');
         } catch (error) {
             console.error('❌ Modules initialization failed:', error);
         }
@@ -99,9 +99,10 @@ class FinanceApp {
         const pizzaToggleBtn = document.getElementById('pizzaToggleBtn');
         const pizzaCloseBtn = document.getElementById('pizzaCloseBtn');
         const pizzaBackdrop = document.getElementById('pizzaBackdrop');
+        const pizzaWheelRotatable = document.getElementById('pizzaWheelRotatable');
         const pizzaSlices = document.querySelectorAll('.pizza-slice');
 
-        if (!pizzaToggleBtn || !pizzaCloseBtn || !pizzaBackdrop) {
+        if (!pizzaToggleBtn || !pizzaCloseBtn || !pizzaBackdrop || !pizzaWheelRotatable) {
             console.warn('Pizza wheel elements not found');
             return;
         }
@@ -134,6 +135,9 @@ class FinanceApp {
             });
         });
 
+        // Touch and mouse events for rotation
+        this.setupWheelRotation(pizzaWheelRotatable);
+
         // Close on escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.isPizzaOpen) {
@@ -143,6 +147,71 @@ class FinanceApp {
 
         // Set initial active slice
         this.updatePizzaActiveState();
+    }
+
+    setupWheelRotation(wheelElement) {
+        let isDragging = false;
+        let startAngle = 0;
+        let currentAngle = 0;
+        let rotationSpeed = 0.5; // Adjust rotation sensitivity
+
+        const startRotation = (clientX, clientY) => {
+            isDragging = true;
+            const rect = wheelElement.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + (rect.height / 2) + 160; // Account for semicircle
+            startAngle = Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
+        };
+
+        const rotate = (clientX, clientY) => {
+            if (!isDragging) return;
+            
+            const rect = wheelElement.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + (rect.height / 2) + 160;
+            const angle = Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
+            
+            const deltaAngle = angle - startAngle;
+            currentAngle += deltaAngle * rotationSpeed;
+            
+            wheelElement.style.transform = `rotate(${currentAngle}deg)`;
+            startAngle = angle;
+        };
+
+        const stopRotation = () => {
+            isDragging = false;
+        };
+
+        // Mouse events
+        wheelElement.addEventListener('mousedown', (e) => {
+            startRotation(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            rotate(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('mouseup', stopRotation);
+
+        // Touch events
+        wheelElement.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            startRotation(touch.clientX, touch.clientY);
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            rotate(touch.clientX, touch.clientY);
+        });
+
+        document.addEventListener('touchend', stopRotation);
+
+        // Prevent context menu
+        wheelElement.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
     }
 
     togglePizzaWheel(open) {
@@ -218,219 +287,41 @@ class FinanceApp {
         await this.renderTabContent(tabName);
     }
 
-    // Dalam class FinanceApp, tambahkan:
-async initializeModules() {
-    try {
-        // Load transaction modal module
-        const transactionModalModule = await import('./modules/transaction-modal.js');
-        this.transactionModal = new transactionModalModule.TransactionModal(this);
-        
-        this.modules = {
-            dashboard: null,
-            transactions: null,
-            reports: null,
-            'settings-personalization': null
-        };
-        
-    } catch (error) {
-        console.error('❌ Modules initialization failed:', error);
-    }
-}
-
-// Update modal functions di main.js:
-    setupPizzaWheel() {
-    const pizzaToggleBtn = document.getElementById('pizzaToggleBtn');
-    const pizzaCloseBtn = document.getElementById('pizzaCloseBtn');
-    const pizzaBackdrop = document.getElementById('pizzaBackdrop');
-    const pizzaWheelRotatable = document.getElementById('pizzaWheelRotatable');
-    const pizzaSlices = document.querySelectorAll('.pizza-slice');
-
-    if (!pizzaToggleBtn || !pizzaCloseBtn || !pizzaBackdrop || !pizzaWheelRotatable) {
-        console.warn('Pizza wheel elements not found');
-        return;
-    }
-
-    // Toggle pizza wheel
-    pizzaToggleBtn.addEventListener('click', () => {
-        this.togglePizzaWheel(true);
-    });
-
-    pizzaCloseBtn.addEventListener('click', () => {
-        this.togglePizzaWheel(false);
-    });
-
-    pizzaBackdrop.addEventListener('click', () => {
-        this.togglePizzaWheel(false);
-    });
-
-    // Pizza slice clicks
-    pizzaSlices.forEach(slice => {
-        slice.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const tabName = slice.dataset.tab;
-            
-            // Update active state
-            pizzaSlices.forEach(s => s.classList.remove('active'));
-            slice.classList.add('active');
-            
-            this.switchTab(tabName);
-            this.togglePizzaWheel(false);
-        });
-    });
-
-    // Touch and mouse events for rotation
-    this.setupWheelRotation(pizzaWheelRotatable);
-
-    // Close on escape key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && this.isPizzaOpen) {
-            this.togglePizzaWheel(false);
-        }
-    });
-
-    // Set initial active slice
-    this.updatePizzaActiveState();
-}
-
-setupWheelRotation(wheelElement) {
-    let isDragging = false;
-    let startAngle = 0;
-    let currentAngle = 0;
-    let rotationSpeed = 0.5; // Adjust rotation sensitivity
-
-    const startRotation = (clientX, clientY) => {
-        isDragging = true;
-        const rect = wheelElement.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + (rect.height / 2) + 160; // Account for semicircle
-        startAngle = Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
-    };
-
-    const rotate = (clientX, clientY) => {
-        if (!isDragging) return;
-        
-        const rect = wheelElement.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + (rect.height / 2) + 160;
-        const angle = Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
-        
-        const deltaAngle = angle - startAngle;
-        currentAngle += deltaAngle * rotationSpeed;
-        
-        wheelElement.style.transform = `rotate(${currentAngle}deg)`;
-        startAngle = angle;
-    };
-
-    const stopRotation = () => {
-        isDragging = false;
-    };
-
-    // Mouse events
-    wheelElement.addEventListener('mousedown', (e) => {
-        startRotation(e.clientX, e.clientY);
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        rotate(e.clientX, e.clientY);
-    });
-
-    document.addEventListener('mouseup', stopRotation);
-
-    // Touch events
-    wheelElement.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        startRotation(touch.clientX, touch.clientY);
-    });
-
-    document.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        rotate(touch.clientX, touch.clientY);
-    });
-
-    document.addEventListener('touchend', stopRotation);
-
-    // Prevent context menu
-    wheelElement.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-    });
-}
-
-togglePizzaWheel(open) {
-    const pizzaClosed = document.getElementById('pizzaClosed');
-    const pizzaWheel = document.getElementById('pizzaWheel');
-    const pizzaToggleBtn = document.getElementById('pizzaToggleBtn');
-
-    if (!pizzaClosed || !pizzaWheel || !pizzaToggleBtn) return;
-
-    this.isPizzaOpen = open;
-
-    if (open) {
-        pizzaClosed.classList.add('hidden');
-        pizzaWheel.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        
-        // Animate arrow
-        const arrow = pizzaToggleBtn.querySelector('.pizza-arrow');
-        if (arrow) {
-            arrow.style.transform = 'rotate(180deg)';
-        }
-    } else {
-        pizzaClosed.classList.remove('hidden');
-        pizzaWheel.classList.add('hidden');
-        document.body.style.overflow = '';
-        
-        // Reset arrow
-        const arrow = pizzaToggleBtn.querySelector('.pizza-arrow');
-        if (arrow) {
-            arrow.style.transform = 'rotate(0deg)';
+    showAddTransactionModal() {
+        if (this.modules.transactions && typeof this.modules.transactions.showAddTransactionModal === 'function') {
+            this.modules.transactions.showAddTransactionModal();
+        } else {
+            this.showToast('➕ Memuat modul transaksi...', 'info');
+            // Fallback ke modal sederhana
+            this.showSimpleTransactionModal();
         }
     }
-}
 
-updatePizzaActiveState() {
-    const pizzaSlices = document.querySelectorAll('.pizza-slice');
-    pizzaSlices.forEach(slice => {
-        slice.classList.toggle('active', slice.dataset.tab === this.currentTab);
-    });
-}
-// Dalam class FinanceApp, update method showAddTransactionModal:
-showAddTransactionModal() {
-    if (this.modules.transactions && typeof this.modules.transactions.showAddTransactionModal === 'function') {
-        this.modules.transactions.showAddTransactionModal();
-    } else {
-        this.showToast('➕ Memuat modul transaksi...', 'info');
-        // Fallback ke modal sederhana
-        this.showSimpleTransactionModal();
+    showEditTransactionModal(transactionId) {
+        if (this.modules.transactions && typeof this.modules.transactions.showEditTransactionModal === 'function') {
+            this.modules.transactions.showEditTransactionModal(transactionId);
+        } else {
+            this.showToast('✏️ Fitur edit transaksi sedang dimuat...', 'info');
+        }
     }
-}
 
-showEditTransactionModal(transactionId) {
-    if (this.modules.transactions && typeof this.modules.transactions.showEditTransactionModal === 'function') {
-        this.modules.transactions.showEditTransactionModal(transactionId);
-    } else {
-        this.showToast('✏️ Fitur edit transaksi sedang dimuat...', 'info');
+    // Fallback modal sederhana
+    showSimpleTransactionModal() {
+        const content = `
+            <div style="text-align: center; padding: 20px;">
+                <div class="emoji">⏳</div>
+                <p>Modul transaksi sedang dimuat...</p>
+                <p>Silakan refresh halaman atau buka tab Transaksi terlebih dahulu.</p>
+            </div>
+        `;
+        Utils.createModal('simpleTransactionModal', 'Tambah Transaksi', content);
+        Utils.openModal('simpleTransactionModal');
     }
-}
 
-// Fallback modal sederhana
-showSimpleTransactionModal() {
-    const content = `
-        <div style="text-align: center; padding: 20px;">
-            <div class="emoji">⏳</div>
-            <p>Modul transaksi sedang dimuat...</p>
-            <p>Silakan refresh halaman atau buka tab Transaksi terlebih dahulu.</p>
-        </div>
-    `;
-    Utils.createModal('simpleTransactionModal', 'Tambah Transaksi', content);
-    Utils.openModal('simpleTransactionModal');
-}
-
-// Tambahkan method refresh
-refreshCurrentTab() {
-    this.renderTabContent(this.currentTab);
-}
+    // Tambahkan method refresh
+    refreshCurrentTab() {
+        this.renderTabContent(this.currentTab);
+    }
 
     async renderTabContent(tabName) {
         const tabContent = document.getElementById('tabContent');
@@ -668,10 +559,6 @@ refreshCurrentTab() {
     }
 
     // Modal Functions - akan diimplementasikan oleh modul
-    showAddTransactionModal() {
-        this.showToast('➕ Fitur tambah transaksi akan segera hadir!', 'info');
-    }
-
     showTransferModal() {
         this.showToast('🔄 Fitur transfer akan segera hadir!', 'info');
     }
@@ -682,10 +569,6 @@ refreshCurrentTab() {
 
     showEditWalletModal(walletId) {
         this.showToast(`✏️ Edit dompet ${walletId} akan segera hadir!`, 'info');
-    }
-
-    showEditTransactionModal(transactionId) {
-        this.showToast(`✏️ Edit transaksi ${transactionId} akan segera hadir!`, 'info');
     }
 
     // Method untuk diakses oleh modul
@@ -762,6 +645,21 @@ refreshCurrentTab() {
     switchToTab(tabName) {
         this.switchTab(tabName);
     }
+
+    // Update total balance method
+    async updateTotalBalance() {
+        try {
+            const wallets = await this.DB.getWallets();
+            const totalBalance = wallets.reduce((sum, wallet) => sum + wallet.balance, 0);
+            
+            const totalBalanceElement = document.getElementById('totalBalance');
+            if (totalBalanceElement) {
+                totalBalanceElement.textContent = Utils.formatCurrency(totalBalance);
+            }
+        } catch (error) {
+            console.error('Error updating total balance:', error);
+        }
+    }
 }
 
 // Add CSS for animations
@@ -789,6 +687,54 @@ style.textContent = `
         right: 20px !important;
         z-index: 10000 !important;
     }
+
+    /* Pizza wheel animations */
+    @keyframes pizzaSlideUp {
+        from {
+            transform: translateX(-50%) translateY(100%);
+        }
+        to {
+            transform: translateX(-50%) translateY(0);
+        }
+    }
+
+    /* Progress bar styles for dashboard */
+    .progress-bar-container {
+        width: 100%;
+        height: 8px;
+        background-color: #e0e0e0;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 8px 0;
+    }
+
+    .progress-bar {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+
+    .progress-card {
+        margin-bottom: 15px;
+    }
+
+    .progress-text {
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+    }
+
+    /* Empty state styles */
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: var(--muted-color);
+    }
+
+    .empty-state .emoji {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
 `;
 document.head.appendChild(style);
 
@@ -802,4 +748,4 @@ document.addEventListener('DOMContentLoaded', () => {
     window.closeModal = (modalId) => window.app.closeModal(modalId);
 });
 
-console.log('✅ Main.js loaded successfully');
+console.log('✅ Main.js loaded successfully with rotatable pizza wheel navigation');
