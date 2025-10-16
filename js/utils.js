@@ -1,7 +1,5 @@
-
-// js/utils.js - Enhanced Version untuk mendukung modul-modul
-
-export const Utils = {
+// js/utils.js - Fixed version for global access
+const Utils = {
     formatCurrency: (amount) => {
         return new Intl.NumberFormat('id-ID', {
             style: 'currency',
@@ -27,7 +25,10 @@ export const Utils = {
 
     createModal: (id, title, content) => {
         const modalContainer = document.getElementById('modal-container');
-        if (!modalContainer) return;
+        if (!modalContainer) {
+            console.error('Modal container not found');
+            return;
+        }
         
         // Hapus modal lama jika ada
         const existingModal = document.getElementById(id);
@@ -51,7 +52,9 @@ export const Utils = {
         
         // Event listener untuk menutup saat klik di luar modal
         modal.addEventListener('click', (e) => {
-            if (e.target === modal) this.closeModal(id);
+            if (e.target === modal) {
+                Utils.closeModal(id);
+            }
         });
     },
 
@@ -121,4 +124,7 @@ export const Utils = {
     }
 };
 
-console.log('✅ Utils loaded as module');
+// Make it globally available
+window.Utils = Utils;
+
+console.log('✅ Utils loaded successfully');
