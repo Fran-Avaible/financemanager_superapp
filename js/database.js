@@ -1,35 +1,46 @@
-// js/database.js (Versi Final dengan Fitur Schedule)
+// js/database.js (Fixed Version dengan Error Handling)
 
 export const DB = {
     db: null,
     dbName: 'FinanceSuperAppDB',
-    dbVersion: 3, // Ubah versi menjadi 2 untuk menambahkan store schedules
+    dbVersion: 3,
+    isInitialized: false,
+    initPromise: null,
 
     // ====================================================================
     // 1. INISIALISASI & KONEKSI DATABASE
     // ====================================================================
     async init() {
-        if (this.db) return Promise.resolve(this.db); // Jika sudah terkoneksi, jangan buka lagi
+        // Jika sudah terkoneksi, return langsung
+        if (this.db && this.isInitialized) {
+            return Promise.resolve(this.db);
+        }
 
-        return new Promise((resolve, reject) => {
+        // Jika sedang dalam proses inisialisasi, return promise yang sama
+        if (this.initPromise) {
+            return this.initPromise;
+        }
+
+        this.initPromise = new Promise((resolve, reject) => {
             console.log('🔄 Initializing IndexedDB connection...');
             const request = indexedDB.open(this.dbName, this.dbVersion);
 
             request.onerror = (event) => {
                 console.error('IndexedDB error:', event.target.error);
+                this.initPromise = null;
                 reject('Error opening database');
             };
 
             request.onsuccess = (event) => {
                 this.db = event.target.result;
+                this.isInitialized = true;
                 console.log('✅ IndexedDB connection successful.');
+                this.initPromise = null;
                 resolve(this.db);
             };
 
-            // Fungsi ini hanya berjalan saat database dibuat pertama kali atau saat versi diubah
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
-                const transaction = event.target.transaction;
                 console.log('🚀 Upgrading IndexedDB schema...');
 
                 const objectStores = [
@@ -39,13 +50,13 @@ export const DB = {
                     { name: 'budgets', key: 'id' },
                     { name: 'goldWallets', key: 'id' },
                     { name: 'goldTransactions', key: 'id' },
-                    { name: 'currentGoldPrice', key: 'id' }, // Hanya akan ada 1 item di sini
+                    { name: 'currentGoldPrice', key: 'id' },
                     { name: 'savingsGoals', key: 'id' },
                     { name: 'savingsTransactions', key: 'id' },
                     { name: 'billReminders', key: 'id' },
                     { name: 'liabilities', key: 'id' },
                     { name: 'liabilityPayments', key: 'id' },
-                    { name: 'schedules', key: 'id' }, // Tambahkan store untuk schedules
+                    { name: 'schedules', key: 'id' },
                     { name: 'userProfile', key: 'id' } 
                 ];
 
@@ -55,153 +66,220 @@ export const DB = {
                         console.log(`- Object store '${storeInfo.name}' created.`);
                     }
                 });
-                
-                // Panggil fungsi untuk mengisi data default setelah semua store dibuat
-                this.initDefaultData(transaction);
             };
         });
-    },
 
-    initDefaultData(transaction) {
-        console.log('🌱 Seeding default data...');
-        
-        // Data default hanya diisi jika store-nya kosong
-        const walletsStore = transaction.objectStore('wallets');
-        walletsStore.count().onsuccess = (e) => {
-            if (e.target.result === 0) {
-                walletsStore.add({ id: this.generateId(), name: 'Cash', balance: 500000, emoji: '💵' });
-                walletsStore.add({ id: this.generateId(), name: 'Bank Account', balance: 1500000, emoji: '💳' });
-                console.log('...Default wallets added.');
-            }
-        };
-
-        const categoriesStore = transaction.objectStore('categories');
-        categoriesStore.count().onsuccess = (e) => {
-            if (e.target.result === 0) {
-                categoriesStore.add({ id: this.generateId(), name: 'Food', type: 'expense', emoji: '🍔' });
-                categoriesStore.add({ id: this.generateId(), name: 'Transport', type: 'expense', emoji: '🚌' });
-                categoriesStore.add({ id: this.generateId(), name: 'Salary', type: 'income', emoji: '💰' });
-                console.log('...Default categories added.');
-            }
-        };
-
-        const goldPriceStore = transaction.objectStore('currentGoldPrice');
-        goldPriceStore.count().onsuccess = (e) => {
-            if (e.target.result === 0) {
-                goldPriceStore.add({ id: 'current', buy: 1000000, sell: 980000, source: 'Initial' });
-                console.log('...Default gold price set.');
-            }
-        };
-
-        // Data default untuk schedules (opsional)
-        const schedulesStore = transaction.objectStore('schedules');
-        schedulesStore.count().onsuccess = (e) => {
-            if (e.target.result === 0) {
-                const today = new Date().toISOString().split('T')[0];
-                schedulesStore.add({
-                    id: this.generateId(),
-                    title: 'Meeting Rutin',
-                    description: 'Meeting mingguan dengan tim',
-                    date: today,
-                    type: 'meeting',
-                    startTime: '09:00',
-                    endTime: '10:00',
-                    status: 'pending',
-                    isRecurring: false,
-                    createdAt: new Date().toISOString()
-                });
-                console.log('...Default schedule added.');
-            }
-        };
+        return this.initPromise;
     },
 
     // ====================================================================
-    // 2. FUNGSI PEMBANTU (HELPERS) GENERIC
+    // 2. FUNGSI PEMBANTU (HELPERS) GENERIC dengan Error Handling
     // ====================================================================
+    async ensureDBReady() {
+        if (!this.isInitialized || !this.db) {
+            await this.init();
+        }
+    },
+
     async getAll(storeName) {
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(storeName, 'readonly');
-            const store = transaction.objectStore(storeName);
-            const request = store.getAll();
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = (e) => reject(e.target.error);
-        });
+        try {
+            await this.ensureDBReady();
+            
+            return new Promise((resolve, reject) => {
+                try {
+                    const transaction = this.db.transaction(storeName, 'readonly');
+                    const store = transaction.objectStore(storeName);
+                    const request = store.getAll();
+                    
+                    request.onsuccess = () => resolve(request.result || []);
+                    request.onerror = (e) => {
+                        console.error(`Error getting all from ${storeName}:`, e.target.error);
+                        resolve([]);
+                    };
+                    
+                    transaction.onerror = (e) => {
+                        console.error(`Transaction error for ${storeName}:`, e.target.error);
+                        resolve([]);
+                    };
+                } catch (error) {
+                    console.error(`Error in getAll for ${storeName}:`, error);
+                    resolve([]);
+                }
+            });
+        } catch (error) {
+            console.error(`Failed to ensure DB ready for ${storeName}:`, error);
+            return [];
+        }
     },
     
     async saveAll(storeName, dataArray) {
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(storeName, 'readwrite');
-            const store = transaction.objectStore(storeName);
-            store.clear(); // Hapus semua data lama
-            dataArray.forEach(item => store.put(item)); // Masukkan data baru
-            transaction.oncomplete = () => resolve(true);
-            transaction.onerror = (e) => reject(e.target.error);
-        });
+        try {
+            await this.ensureDBReady();
+            
+            return new Promise((resolve, reject) => {
+                try {
+                    const transaction = this.db.transaction(storeName, 'readwrite');
+                    const store = transaction.objectStore(storeName);
+                    
+                    // Clear store first
+                    const clearRequest = store.clear();
+                    
+                    clearRequest.onsuccess = () => {
+                        // Add all items
+                        const promises = dataArray.map(item => {
+                            return new Promise((resolveItem, rejectItem) => {
+                                const putRequest = store.put(item);
+                                putRequest.onsuccess = () => resolveItem();
+                                putRequest.onerror = (e) => rejectItem(e.target.error);
+                            });
+                        });
+                        
+                        Promise.all(promises)
+                            .then(() => resolve(true))
+                            .catch(error => {
+                                console.error(`Error saving items to ${storeName}:`, error);
+                                resolve(false);
+                            });
+                    };
+                    
+                    clearRequest.onerror = (e) => {
+                        console.error(`Error clearing ${storeName}:`, e.target.error);
+                        resolve(false);
+                    };
+                    
+                } catch (error) {
+                    console.error(`Error in saveAll for ${storeName}:`, error);
+                    resolve(false);
+                }
+            });
+        } catch (error) {
+            console.error(`Failed to ensure DB ready for saveAll ${storeName}:`, error);
+            return false;
+        }
     },
     
     async getById(storeName, id) {
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(storeName, 'readonly');
-            const store = transaction.objectStore(storeName);
-            const request = store.get(id);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = (e) => reject(e.target.error);
-        });
+        try {
+            await this.ensureDBReady();
+            
+            return new Promise((resolve, reject) => {
+                try {
+                    const transaction = this.db.transaction(storeName, 'readonly');
+                    const store = transaction.objectStore(storeName);
+                    const request = store.get(id);
+                    
+                    request.onsuccess = () => resolve(request.result || null);
+                    request.onerror = (e) => {
+                        console.error(`Error getting by id from ${storeName}:`, e.target.error);
+                        resolve(null);
+                    };
+                    
+                } catch (error) {
+                    console.error(`Error in getById for ${storeName}:`, error);
+                    resolve(null);
+                }
+            });
+        } catch (error) {
+            console.error(`Failed to ensure DB ready for getById ${storeName}:`, error);
+            return null;
+        }
     },
 
     async addItem(storeName, item) {
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(storeName, 'readwrite');
-            const store = transaction.objectStore(storeName);
-            const request = store.add(item);
-            request.onsuccess = () => resolve(item);
-            request.onerror = (e) => reject(e.target.error);
-        });
+        try {
+            await this.ensureDBReady();
+            
+            return new Promise((resolve, reject) => {
+                try {
+                    const transaction = this.db.transaction(storeName, 'readwrite');
+                    const store = transaction.objectStore(storeName);
+                    const request = store.add(item);
+                    
+                    request.onsuccess = () => resolve(item);
+                    request.onerror = (e) => {
+                        console.error(`Error adding item to ${storeName}:`, e.target.error);
+                        resolve(null);
+                    };
+                    
+                } catch (error) {
+                    console.error(`Error in addItem for ${storeName}:`, error);
+                    resolve(null);
+                }
+            });
+        } catch (error) {
+            console.error(`Failed to ensure DB ready for addItem ${storeName}:`, error);
+            return null;
+        }
     },
 
     async updateItem(storeName, id, updates) {
-        return new Promise(async (resolve, reject) => {
-            const transaction = this.db.transaction(storeName, 'readwrite');
-            const store = transaction.objectStore(storeName);
+        try {
+            await this.ensureDBReady();
             
-            // Ambil data yang sudah ada
-            const getRequest = store.get(id);
-            getRequest.onsuccess = () => {
-                const existingItem = getRequest.result;
-                if (!existingItem) {
-                    reject(new Error('Item not found'));
-                    return;
+            return new Promise(async (resolve, reject) => {
+                try {
+                    const transaction = this.db.transaction(storeName, 'readwrite');
+                    const store = transaction.objectStore(storeName);
+                    
+                    const getRequest = store.get(id);
+                    getRequest.onsuccess = () => {
+                        const existingItem = getRequest.result;
+                        if (!existingItem) {
+                            console.warn(`Item with id ${id} not found in ${storeName}`);
+                            resolve(null);
+                            return;
+                        }
+                        
+                        const updatedItem = { ...existingItem, ...updates };
+                        const putRequest = store.put(updatedItem);
+                        putRequest.onsuccess = () => resolve(updatedItem);
+                        putRequest.onerror = (e) => {
+                            console.error(`Error updating item in ${storeName}:`, e.target.error);
+                            resolve(null);
+                        };
+                    };
+                    
+                    getRequest.onerror = (e) => {
+                        console.error(`Error getting item for update from ${storeName}:`, e.target.error);
+                        resolve(null);
+                    };
+                    
+                } catch (error) {
+                    console.error(`Error in updateItem for ${storeName}:`, error);
+                    resolve(null);
                 }
-                
-                // Update data
-                const updatedItem = { ...existingItem, ...updates };
-                const putRequest = store.put(updatedItem);
-                putRequest.onsuccess = () => resolve(updatedItem);
-                putRequest.onerror = (e) => reject(e.target.error);
-            };
-            getRequest.onerror = (e) => reject(e.target.error);
-        });
+            });
+        } catch (error) {
+            console.error(`Failed to ensure DB ready for updateItem ${storeName}:`, error);
+            return null;
+        }
     },
 
     async deleteItem(storeName, id) {
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(storeName, 'readwrite');
-            const store = transaction.objectStore(storeName);
-            const request = store.delete(id);
-            request.onsuccess = () => resolve(true);
-            request.onerror = (e) => reject(e.target.error);
-        });
-    },
-
-        async getUserProfile() {
-        return await this.getById('userProfile', 'main');
-    },
-    async saveUserProfile(name) {
-        const profile = { id: 'main', name, createdAt: new Date().toISOString() };
-        const tx = this.db.transaction('userProfile', 'readwrite');
-        tx.objectStore('userProfile').put(profile);
-        await new Promise(r => tx.oncomplete = r);
-        return profile;
+        try {
+            await this.ensureDBReady();
+            
+            return new Promise((resolve, reject) => {
+                try {
+                    const transaction = this.db.transaction(storeName, 'readwrite');
+                    const store = transaction.objectStore(storeName);
+                    const request = store.delete(id);
+                    
+                    request.onsuccess = () => resolve(true);
+                    request.onerror = (e) => {
+                        console.error(`Error deleting item from ${storeName}:`, e.target.error);
+                        resolve(false);
+                    };
+                    
+                } catch (error) {
+                    console.error(`Error in deleteItem for ${storeName}:`, error);
+                    resolve(false);
+                }
+            });
+        } catch (error) {
+            console.error(`Failed to ensure DB ready for deleteItem ${storeName}:`, error);
+            return false;
+        }
     },
 
     // ====================================================================
@@ -210,11 +288,24 @@ export const DB = {
     generateId: () => Date.now().toString(36) + Math.random().toString(36).substr(2),
 
     // Wallets
-    async getWallets() { return this.getAll('wallets'); },
+    async getWallets() { 
+        const wallets = await this.getAll('wallets');
+        return wallets.length > 0 ? wallets : [
+            { id: this.generateId(), name: 'Cash', balance: 500000, emoji: '💵' },
+            { id: this.generateId(), name: 'Bank Account', balance: 1500000, emoji: '💳' }
+        ];
+    },
     async saveWallets(wallets) { return this.saveAll('wallets', wallets); },
 
     // Categories
-    async getCategories() { return this.getAll('categories'); },
+    async getCategories() { 
+        const categories = await this.getAll('categories');
+        return categories.length > 0 ? categories : [
+            { id: this.generateId(), name: 'Food', type: 'expense', emoji: '🍔' },
+            { id: this.generateId(), name: 'Transport', type: 'expense', emoji: '🚌' },
+            { id: this.generateId(), name: 'Salary', type: 'income', emoji: '💰' }
+        ];
+    },
     async saveCategories(categories) { return this.saveAll('categories', categories); },
     async getCategoryById(id) { return this.getById('categories', id); },
 
@@ -238,7 +329,7 @@ export const DB = {
     async saveGoldPrice(price) {
         const priceObject = {
             ...price,
-            id: 'current', // Key statis agar selalu menimpa data yang sama
+            id: 'current',
             lastUpdate: new Date().toISOString()
         };
         const transaction = this.db.transaction('currentGoldPrice', 'readwrite');
@@ -260,87 +351,79 @@ export const DB = {
     async getBillReminders() { return this.getAll('billReminders'); },
     async saveBillReminders(reminders) { return this.saveAll('billReminders', reminders); },
 
-    // ====================================================================
-    // 4. SCHEDULES MANAGEMENT (Fitur Baru)
-    // ====================================================================
-    async getSchedules() {
-        try {
-            return await this.getAll('schedules');
-        } catch (error) {
-            console.error('Error getting schedules:', error);
-            return [];
-        }
-    },
-
+    // Schedules
+    async getSchedules() { return this.getAll('schedules'); },
     async addSchedule(schedule) {
-        try {
-            const scheduleWithId = {
-                ...schedule,
-                id: this.generateId(),
-                createdAt: new Date().toISOString()
-            };
-            return await this.addItem('schedules', scheduleWithId);
-        } catch (error) {
-            console.error('Error adding schedule:', error);
-            throw error;
-        }
+        const scheduleWithId = {
+            ...schedule,
+            id: this.generateId(),
+            createdAt: new Date().toISOString()
+        };
+        return await this.addItem('schedules', scheduleWithId);
+    },
+    async getSchedule(id) { return this.getById('schedules', id); },
+    async updateSchedule(id, updates) { return this.updateItem('schedules', id, updates); },
+    async deleteSchedule(id) { return this.deleteItem('schedules', id); },
+
+    // User Profile
+    async getUserProfile() {
+        return await this.getById('userProfile', 'main');
+    },
+    async saveUserProfile(name) {
+        const profile = { id: 'main', name, createdAt: new Date().toISOString() };
+        const tx = this.db.transaction('userProfile', 'readwrite');
+        tx.objectStore('userProfile').put(profile);
+        return profile;
     },
 
-    async getSchedule(id) {
+    // Personalization
+    async getPersonalizationSettings() {
         try {
-            return await this.getById('schedules', id);
+            const settings = localStorage.getItem('personalizationSettings');
+            return settings ? JSON.parse(settings) : null;
         } catch (error) {
-            console.error('Error getting schedule:', error);
+            console.error('Error getting personalization settings:', error);
             return null;
         }
     },
 
-    async updateSchedule(id, updates) {
+    async savePersonalizationSettings(settings) {
         try {
-            return await this.updateItem('schedules', id, updates);
+            localStorage.setItem('personalizationSettings', JSON.stringify(settings));
+            return true;
         } catch (error) {
-            console.error('Error updating schedule:', error);
-            throw error;
+            console.error('Error saving personalization settings:', error);
+            return false;
         }
     },
 
-    async deleteSchedule(id) {
+    async getSavedThemes() {
         try {
-            return await this.deleteItem('schedules', id);
+            const themes = localStorage.getItem('savedThemes');
+            return themes ? JSON.parse(themes) : [];
         } catch (error) {
-            console.error('Error deleting schedule:', error);
-            throw error;
-        }
-    },
-
-    async getSchedulesByDate(date) {
-        try {
-            const allSchedules = await this.getSchedules();
-            return allSchedules.filter(schedule => schedule.date === date);
-        } catch (error) {
-            console.error('Error getting schedules by date:', error);
+            console.error('Error getting saved themes:', error);
             return [];
         }
     },
 
-    async getSchedulesByDateRange(startDate, endDate) {
+    async saveSavedThemes(themes) {
         try {
-            const allSchedules = await this.getSchedules();
-            return allSchedules.filter(schedule => {
-                return schedule.date >= startDate && schedule.date <= endDate;
-            });
+            localStorage.setItem('savedThemes', JSON.stringify(themes));
+            return true;
         } catch (error) {
-            console.error('Error getting schedules by date range:', error);
-            return [];
+            console.error('Error saving themes:', error);
+            return false;
         }
     },
 
     // ====================================================================
-    // 5. FUNGSI UTILITAS (Backup, Restore, etc.)
+    // 4. FUNGSI UTILITAS (Backup, Restore, etc.)
     // ====================================================================
     async backupData() {
         try {
-            // Mengambil semua data secara paralel untuk efisiensi
+            await this.ensureDBReady();
+            
             const [
                 wallets, categories, transactions, budgets, goldWallets, 
                 goldTransactions, currentGoldPrice, liabilities, liabilityPayments, 
@@ -358,7 +441,7 @@ export const DB = {
                 currentGoldPrice, liabilities, liabilityPayments, savingsGoals,
                 savingsTransactions, billReminders, schedules,
                 exportedAt: new Date().toISOString(),
-                version: '3.1' // Versi dengan schedules
+                version: '3.1'
             };
 
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -381,6 +464,8 @@ export const DB = {
 
     async restoreData(jsonData) {
         try {
+            await this.ensureDBReady();
+            
             const data = JSON.parse(jsonData);
             if (!data.wallets || !data.categories) {
                 throw new Error('Invalid backup file format.');
@@ -388,7 +473,6 @@ export const DB = {
 
             console.log('🔄 Restoring data...');
 
-            // Menyimpan semua data secara paralel
             await Promise.all([
                 this.saveAll('wallets', data.wallets || []),
                 this.saveAll('categories', data.categories || []),
@@ -401,7 +485,7 @@ export const DB = {
                 this.saveAll('savingsGoals', data.savingsGoals || []),
                 this.saveAll('savingsTransactions', data.savingsTransactions || []),
                 this.saveAll('billReminders', data.billReminders || []),
-                this.saveAll('schedules', data.schedules || []), // Tambahkan schedules
+                this.saveAll('schedules', data.schedules || []),
                 this.saveGoldPrice(data.currentGoldPrice || { buy: 1000000, sell: 980000, source: 'Restored' })
             ]);
             
@@ -413,38 +497,10 @@ export const DB = {
         }
     },
 
-    async exportData() {
-        try {
-            const [
-                wallets, categories, transactions, budgets, goldWallets, 
-                goldTransactions, currentGoldPrice, liabilities, liabilityPayments, 
-                savingsGoals, savingsTransactions, billReminders, schedules
-            ] = await Promise.all([
-                this.getWallets(), this.getCategories(), this.getTransactions(),
-                this.getBudgets(), this.getGoldWallets(), this.getGoldTransactions(),
-                this.getGoldPrice(), this.getLiabilities(), this.getLiabilityPayments(),
-                this.getSavingsGoals(), this.getSavingsTransactions(), this.getBillReminders(),
-                this.getSchedules()
-            ]);
-
-            return {
-                wallets, categories, transactions, budgets, goldWallets, goldTransactions,
-                currentGoldPrice, liabilities, liabilityPayments, savingsGoals,
-                savingsTransactions, billReminders, schedules,
-                exportDate: new Date().toISOString(),
-                version: '3.1' // Versi dengan schedules
-            };
-        } catch (error) {
-            console.error('Export data error:', error);
-            throw error;
-        }
-    },
-
-    // ====================================================================
-    // 6. FUNGSI PEMBERSIHAN DATA
-    // ====================================================================
     async clearAllData() {
         try {
+            await this.ensureDBReady();
+            
             const stores = [
                 'wallets', 'categories', 'transactions', 'budgets', 
                 'goldWallets', 'goldTransactions', 'savingsGoals', 
@@ -456,7 +512,6 @@ export const DB = {
                 this.saveAll(storeName, [])
             ));
 
-            // Reset gold price to default
             await this.saveGoldPrice({ buy: 1000000, sell: 980000, source: 'Reset' });
             
             console.log('🧹 All data cleared successfully.');
@@ -465,45 +520,5 @@ export const DB = {
             console.error('Error clearing data:', error);
             return false;
         }
-    },
-    // Tambahkan method untuk personalization settings
-async getPersonalizationSettings() {
-    try {
-        const settings = localStorage.getItem('personalizationSettings');
-        return settings ? JSON.parse(settings) : null;
-    } catch (error) {
-        console.error('Error getting personalization settings:', error);
-        return null;
     }
-},
-
-async savePersonalizationSettings(settings) {
-    try {
-        localStorage.setItem('personalizationSettings', JSON.stringify(settings));
-        return true;
-    } catch (error) {
-        console.error('Error saving personalization settings:', error);
-        return false;
-    }
-},
-
-async getSavedThemes() {
-    try {
-        const themes = localStorage.getItem('savedThemes');
-        return themes ? JSON.parse(themes) : [];
-    } catch (error) {
-        console.error('Error getting saved themes:', error);
-        return [];
-    }
-},
-
-async saveSavedThemes(themes) {
-    try {
-        localStorage.setItem('savedThemes', JSON.stringify(themes));
-        return true;
-    } catch (error) {
-        console.error('Error saving themes:', error);
-        return false;
-    }
-}
 };
