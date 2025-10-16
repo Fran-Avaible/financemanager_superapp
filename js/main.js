@@ -238,6 +238,163 @@ async initializeModules() {
 }
 
 // Update modal functions di main.js:
+    setupPizzaWheel() {
+    const pizzaToggleBtn = document.getElementById('pizzaToggleBtn');
+    const pizzaCloseBtn = document.getElementById('pizzaCloseBtn');
+    const pizzaBackdrop = document.getElementById('pizzaBackdrop');
+    const pizzaWheelRotatable = document.getElementById('pizzaWheelRotatable');
+    const pizzaSlices = document.querySelectorAll('.pizza-slice');
+
+    if (!pizzaToggleBtn || !pizzaCloseBtn || !pizzaBackdrop || !pizzaWheelRotatable) {
+        console.warn('Pizza wheel elements not found');
+        return;
+    }
+
+    // Toggle pizza wheel
+    pizzaToggleBtn.addEventListener('click', () => {
+        this.togglePizzaWheel(true);
+    });
+
+    pizzaCloseBtn.addEventListener('click', () => {
+        this.togglePizzaWheel(false);
+    });
+
+    pizzaBackdrop.addEventListener('click', () => {
+        this.togglePizzaWheel(false);
+    });
+
+    // Pizza slice clicks
+    pizzaSlices.forEach(slice => {
+        slice.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const tabName = slice.dataset.tab;
+            
+            // Update active state
+            pizzaSlices.forEach(s => s.classList.remove('active'));
+            slice.classList.add('active');
+            
+            this.switchTab(tabName);
+            this.togglePizzaWheel(false);
+        });
+    });
+
+    // Touch and mouse events for rotation
+    this.setupWheelRotation(pizzaWheelRotatable);
+
+    // Close on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.isPizzaOpen) {
+            this.togglePizzaWheel(false);
+        }
+    });
+
+    // Set initial active slice
+    this.updatePizzaActiveState();
+}
+
+setupWheelRotation(wheelElement) {
+    let isDragging = false;
+    let startAngle = 0;
+    let currentAngle = 0;
+    let rotationSpeed = 0.5; // Adjust rotation sensitivity
+
+    const startRotation = (clientX, clientY) => {
+        isDragging = true;
+        const rect = wheelElement.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + (rect.height / 2) + 160; // Account for semicircle
+        startAngle = Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
+    };
+
+    const rotate = (clientX, clientY) => {
+        if (!isDragging) return;
+        
+        const rect = wheelElement.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + (rect.height / 2) + 160;
+        const angle = Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
+        
+        const deltaAngle = angle - startAngle;
+        currentAngle += deltaAngle * rotationSpeed;
+        
+        wheelElement.style.transform = `rotate(${currentAngle}deg)`;
+        startAngle = angle;
+    };
+
+    const stopRotation = () => {
+        isDragging = false;
+    };
+
+    // Mouse events
+    wheelElement.addEventListener('mousedown', (e) => {
+        startRotation(e.clientX, e.clientY);
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        rotate(e.clientX, e.clientY);
+    });
+
+    document.addEventListener('mouseup', stopRotation);
+
+    // Touch events
+    wheelElement.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        startRotation(touch.clientX, touch.clientY);
+    });
+
+    document.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        rotate(touch.clientX, touch.clientY);
+    });
+
+    document.addEventListener('touchend', stopRotation);
+
+    // Prevent context menu
+    wheelElement.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    });
+}
+
+togglePizzaWheel(open) {
+    const pizzaClosed = document.getElementById('pizzaClosed');
+    const pizzaWheel = document.getElementById('pizzaWheel');
+    const pizzaToggleBtn = document.getElementById('pizzaToggleBtn');
+
+    if (!pizzaClosed || !pizzaWheel || !pizzaToggleBtn) return;
+
+    this.isPizzaOpen = open;
+
+    if (open) {
+        pizzaClosed.classList.add('hidden');
+        pizzaWheel.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        // Animate arrow
+        const arrow = pizzaToggleBtn.querySelector('.pizza-arrow');
+        if (arrow) {
+            arrow.style.transform = 'rotate(180deg)';
+        }
+    } else {
+        pizzaClosed.classList.remove('hidden');
+        pizzaWheel.classList.add('hidden');
+        document.body.style.overflow = '';
+        
+        // Reset arrow
+        const arrow = pizzaToggleBtn.querySelector('.pizza-arrow');
+        if (arrow) {
+            arrow.style.transform = 'rotate(0deg)';
+        }
+    }
+}
+
+updatePizzaActiveState() {
+    const pizzaSlices = document.querySelectorAll('.pizza-slice');
+    pizzaSlices.forEach(slice => {
+        slice.classList.toggle('active', slice.dataset.tab === this.currentTab);
+    });
+}
 // Dalam class FinanceApp, update method showAddTransactionModal:
 showAddTransactionModal() {
     if (this.modules.transactions && typeof this.modules.transactions.showAddTransactionModal === 'function') {
