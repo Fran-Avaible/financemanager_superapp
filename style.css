@@ -1246,3 +1246,165 @@ body {
     right: 20px !important;
     z-index: 10000 !important;
 }
+
+/* ===== PIZZA WHEEL FIXES ===== */
+.pizza-wheel-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* Pastikan pizza wheel TAMPIL di mobile */
+@media (max-width: 768px) {
+    .pizza-wheel-container {
+        display: block !important; /* Force show on mobile */
+    }
+    
+    .pizza-half-circle {
+        width: 320px;
+        height: 160px;
+        border-radius: 160px 160px 0 0;
+    }
+    
+    /* Pastikan semua slice terlihat */
+    .pizza-slice {
+        width: 80px;
+        height: 80px;
+        transform-origin: center 160px;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+    
+    /* Position untuk 7 slices */
+    .pizza-slice[data-tab="dashboard"] { 
+        transform: rotate(-75deg) translate(0, -120px) rotate(75deg); 
+    }
+    .pizza-slice[data-tab="transactions"] { 
+        transform: rotate(-50deg) translate(0, -120px) rotate(50deg); 
+    }
+    .pizza-slice[data-tab="financial-planning"] { 
+        transform: rotate(-25deg) translate(0, -120px) rotate(25deg); 
+    }
+    .pizza-slice[data-tab="reports"] { 
+        transform: rotate(0deg) translate(0, -120px) rotate(0deg); 
+    }
+    .pizza-slice[data-tab="calendar"] { 
+        transform: rotate(25deg) translate(0, -120px) rotate(-25deg); 
+    }
+    .pizza-slice[data-tab="gold"] { 
+        transform: rotate(50deg) translate(0, -120px) rotate(-50deg); 
+    }
+    .pizza-slice[data-tab="settings-personalization"] { 
+        transform: rotate(75deg) translate(0, -120px) rotate(-75deg); 
+    }
+    
+    /* Active states */
+    .pizza-slice.active[data-tab="dashboard"] { 
+        transform: rotate(-75deg) translate(0, -130px) rotate(75deg) scale(1.2); 
+    }
+    .pizza-slice.active[data-tab="transactions"] { 
+        transform: rotate(-50deg) translate(0, -130px) rotate(50deg) scale(1.2); 
+    }
+    .pizza-slice.active[data-tab="financial-planning"] { 
+        transform: rotate(-25deg) translate(0, -130px) rotate(25deg) scale(1.2); 
+    }
+    .pizza-slice.active[data-tab="reports"] { 
+        transform: rotate(0deg) translate(0, -130px) rotate(0deg) scale(1.2); 
+    }
+    .pizza-slice.active[data-tab="calendar"] { 
+        transform: rotate(25deg) translate(0, -130px) rotate(-25deg) scale(1.2); 
+    }
+    .pizza-slice.active[data-tab="gold"] { 
+        transform: rotate(50deg) translate(0, -130px) rotate(-50deg) scale(1.2); 
+    }
+    .pizza-slice.active[data-tab="settings-personalization"] { 
+        transform: rotate(75deg) translate(0, -130px) rotate(-75deg) scale(1.2); 
+    }
+}
+
+/* Untuk screen sangat kecil */
+@media (max-width: 480px) {
+    .pizza-half-circle {
+        width: 280px;
+        height: 140px;
+        border-radius: 140px 140px 0 0;
+    }
+    
+    .pizza-slice {
+        width: 70px;
+        height: 70px;
+        transform-origin: center 140px;
+    }
+    
+    /* Position untuk screen kecil */
+    .pizza-slice[data-tab="dashboard"] { 
+        transform: rotate(-75deg) translate(0, -100px) rotate(75deg); 
+    }
+    .pizza-slice[data-tab="transactions"] { 
+        transform: rotate(-50deg) translate(0, -100px) rotate(50deg); 
+    }
+    .pizza-slice[data-tab="financial-planning"] { 
+        transform: rotate(-25deg) translate(0, -100px) rotate(25deg); 
+    }
+    .pizza-slice[data-tab="reports"] { 
+        transform: rotate(0deg) translate(0, -100px) rotate(0deg); 
+    }
+    .pizza-slice[data-tab="calendar"] { 
+        transform: rotate(25deg) translate(0, -100px) rotate(-25deg); 
+    }
+    .pizza-slice[data-tab="gold"] { 
+        transform: rotate(50deg) translate(0, -100px) rotate(-50deg); 
+    }
+    .pizza-slice[data-tab="settings-personalization"] { 
+        transform: rotate(75deg) translate(0, -100px) rotate(-75deg); 
+    }
+    
+    /* Active states untuk screen kecil */
+    .pizza-slice.active[data-tab="dashboard"] { 
+        transform: rotate(-75deg) translate(0, -110px) rotate(75deg) scale(1.2); 
+    }
+    .pizza-slice.active[data-tab="transactions"] { 
+        transform: rotate(-50deg) translate(0, -110px) rotate(50deg) scale(1.2); 
+    }
+    .pizza-slice.active[data-tab="financial-planning"] { 
+        transform: rotate(-25deg) translate(0, -110px) rotate(25deg) scale(1.2); 
+    }
+    .pizza-slice.active[data-tab="reports"] { 
+        transform: rotate(0deg) translate(0, -110px) rotate(0deg) scale(1.2); 
+    }
+    .pizza-slice.active[data-tab="calendar"] { 
+        transform: rotate(25deg) translate(0, -110px) rotate(-25deg) scale(1.2); 
+    }
+    .pizza-slice.active[data-tab="gold"] { 
+        transform: rotate(50deg) translate(0, -110px) rotate(-50deg) scale(1.2); 
+    }
+    .pizza-slice.active[data-tab="settings-personalization"] { 
+        transform: rotate(75deg) translate(0, -110px) rotate(-75deg) scale(1.2); 
+    }
+    
+    .slice-emoji {
+        font-size: 16px;
+    }
+    
+    .slice-label {
+        font-size: 7px;
+        max-width: 55px;
+    }
+}
+
+/* Pastikan desktop navigation disembunyikan di mobile */
+@media (max-width: 768px) {
+    .tab-palette-nav {
+        display: none !important;
+    }
+}
+
+/* Pastikan pizza wheel disembunyikan di desktop */
+@media (min-width: 769px) {
+    .pizza-wheel-container {
+        display: none !important;
+    }
+}
